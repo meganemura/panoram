@@ -20,7 +20,7 @@ JSON is the default output:
 | Field | Meaning |
 | --- | --- |
 | `query` | The query name, or `sql`. |
-| `scope` | `agents` or `all`. |
+| `scope` | `root`, `agents`, or `all`. |
 | `me` | The caller's pane, or null when the environment names none. |
 | `params` | Every value the statement bound. |
 | `rows` | The rows, in the order the query defines. |
@@ -64,8 +64,9 @@ derives from `updated_at`.
 
 | Flag | Meaning |
 | --- | --- |
-| `--root DIR` | The repository for a query or report that takes `root`. Default: the git toplevel of the current directory, or the directory itself outside a repository. It adds that root to every repository-scoped loader, even when no agent sits there. |
-| `--scope agents` | Default. Repository-scoped loaders run on the repositories that have an agent. |
+| `--root DIR` | The repository for a query or report that takes `root`. Default: the git toplevel of the current directory, or the directory itself outside a repository. A query that takes `--root` runs the loaders on that root alone by default (`--scope root`); `--scope agents` widens to every repository with an agent, `--scope all` to every ghq repository. |
+| `--scope root` | Repository-scoped loaders run on the root bound to the query. |
+| `--scope agents` | Repository-scoped loaders run on the repositories that have an agent. |
 | `--scope all` | git, mise, processes, beads, headsign, skills, and github also run on every ghq repository. Several seconds. |
 | `--me PANE` | The pane to exclude. Default: the caller's own pane, from `HERDR_PANE_ID`, then `CLAUDE_CODE_SESSION_ID` matched to a session, then the pane herdr has in focus. `--me ""` keeps every pane. |
 | `--tsv` | Rows only, tab separated. A report prints named sections. |
@@ -74,6 +75,8 @@ derives from `updated_at`.
 | `--expect-empty` | Exit 3 after output when the query returned rows. For `here`, it reads the `agents` section only. |
 | `--strict` | Exit 4 after output when a provider did not answer. |
 | `--help` | The built-in and user queries, then reports, with descriptions. `--help --json` prints their names, descriptions, parameters, sources, and report sections as JSON. |
+
+A query that takes `--root` runs the loaders on that root alone by default (`--scope root`); `--scope agents` widens to every repository with an agent, `--scope all` to every ghq repository.
 
 panoram records call counts in `$XDG_STATE_HOME/panoram/calls.jsonl`, or `~/.local/state/panoram/calls.jsonl` when the variable is unset.
 

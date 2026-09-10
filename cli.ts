@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// The command line: panoram <query|report> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]
-//                   panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all] [--expect-empty] [--strict]
+// The command line: panoram <query|report> [--root DIR] [--scope root|agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]
+//                   panoram --sql <text> [--root DIR] [--me PANE] [--scope root|agents|all] [--expect-empty] [--strict]
 //                   panoram --help
 // The JSON envelope carries the rows and the `providers` rows, so a caller
 // sees which provider answered and when. TSV carries the rows only, and a
@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { catalog, reportParams, reports } from "./catalog.ts";
 import { callCounts, callsPath, recordCall } from "./core/calls.ts";
+import type { Scope } from "./core/loader.ts";
 import { runQuery, runReport, runSql, type ProviderRow, type ReportResult, type RunResult } from "./core/run.ts";
 import { loadUserQueries, type UserQuery } from "./core/user-queries.ts";
 import { loaders } from "./panoram.config.ts";
@@ -50,8 +51,8 @@ function usage(userQueries: readonly UserQuery[], env: Readonly<Record<string, s
   const userLines = queries.filter((query) => query.source === "user").map((query) => queryLine(query.name, query.description, query.params, width));
   const reportLines = reportEntries.map((report) => queryLine(report.name, report.description, report.params, width));
   return [
-    "usage: panoram <query|report> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]",
-    "       panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all] [--json|--tsv] [--expect-empty] [--strict]",
+    "usage: panoram <query|report> [--root DIR] [--scope root|agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]",
+    "       panoram --sql <text> [--root DIR] [--me PANE] [--scope root|agents|all] [--json|--tsv] [--expect-empty] [--strict]",
     "",
     "queries:",
     ...lines,
@@ -60,7 +61,7 @@ function usage(userQueries: readonly UserQuery[], env: Readonly<Record<string, s
     "reports:",
     ...reportLines,
     "",
-    "--scope agents (default) runs repository-scoped providers on roots with an agent; all also uses every ghq root.",
+    "A root-bound query defaults to --scope root. --scope agents uses roots with an agent; --scope all also uses every ghq root.",
     "--root defaults to the git toplevel of the current directory.",
     "--me excludes one pane; by default the caller's own pane, found from the environment.",
     "--expect-empty exits 3 after it prints rows when the query returned rows.",
@@ -98,6 +99,10 @@ function textOption(values: Record<string, unknown>, name: string): string | und
   if (value === undefined) return undefined;
   if (typeof value === "string") return value;
   throw new Error(`--${name} needs a value`);
+}
+
+function isScope(value: string | undefined): value is Scope | undefined {
+  return value === undefined || value === "root" || value === "agents" || value === "all";
 }
 
 function validateQueryOptions(values: Record<string, unknown>, userQueries: readonly UserQuery[], parameters: readonly string[], name: string): void {
@@ -154,7 +159,7 @@ async function main(argv: string[]): Promise<number> {
   });
   const sql = textOption(values, "sql");
   const root = textOption(values, "root");
-  const scope = textOption(values, "scope") ?? "agents";
+  const scope = textOption(values, "scope");
   const me = textOption(values, "me");
   const help = values["help"] === true;
   const requestedName = positionals[0];
@@ -173,8 +178,8 @@ async function main(argv: string[]): Promise<number> {
     else console.log(usage(userQueries, process.env));
     return help ? 0 : 2;
   }
-  if (scope !== "agents" && scope !== "all") {
-    console.error(`panoram: --scope is agents or all, not ${scope}`);
+  if (!isScope(scope)) {
+    console.error(`panoram: --scope is root, agents, or all, not ${scope}`);
     return 2;
   }
   // Keep the same parameter names intact when the CLI passes them to SQLite.
@@ -228,7 +233,7 @@ async function main(argv: string[]): Promise<number> {
   recordCall(process.env, name);
   if (reportResult !== undefined) {
     if (values["tsv"] === true) process.stdout.write(reportTsv(reportResult.sections));
-    else console.log(JSON.stringify({ report: name, root: reportResult.params["root"], scope, me: reportResult.me, params: reportResult.params, sections: reportResult.sections, providers: reportResult.providers }, null, 2));
+    else console.log(JSON.stringify({ report: name, root: reportResult.params["root"], scope: reportResult.scope, me: reportResult.me, params: reportResult.params, sections: reportResult.sections, providers: reportResult.providers }, null, 2));
     warn(reportResult.providers);
     return exitCodeFor({ rows: reportResult.sections["agents"] ?? [], providers: reportResult.providers }, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
   }
@@ -237,7 +242,7 @@ async function main(argv: string[]): Promise<number> {
     process.stdout.write(tsv(result.rows));
     warn(result.providers);
   } else {
-    console.log(JSON.stringify({ query: name, scope, me: result.me, params: result.params, rows: result.rows, providers: result.providers }, null, 2));
+    console.log(JSON.stringify({ query: name, scope: result.scope, me: result.me, params: result.params, rows: result.rows, providers: result.providers }, null, 2));
   }
   return exitCodeFor(result, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
 }

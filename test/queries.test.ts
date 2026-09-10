@@ -35,15 +35,23 @@ const sessionFixtureLoader: Loader = {
 
 const fixtureLoaders = loaders.map((loader) => loader.name === "sessions" ? sessionFixtureLoader : loader);
 
-async function query(name: keyof typeof catalog, scope: Scope = "agents", params: Record<string, unknown> = {}, exec: Exec = fakeExec()) {
-  return runQuery(catalog[name]!.query, {
+async function query(name: keyof typeof catalog, scope: Scope | undefined = undefined, params: Record<string, unknown> = {}, exec: Exec = fakeExec()) {
+  const options = {
     loaders: fixtureLoaders,
     exec,
     repo: fixtureRepo,
     env: {},
-    scope,
     params,
-  });
+  };
+  return runQuery(catalog[name]!.query, scope === undefined ? options : { ...options, scope });
+}
+
+function gitStatusExec(cwds: string[]): Exec {
+  const base = fakeExec();
+  return async (command, args, cwd, options) => {
+    if (command === "git" && args[0] === "--no-optional-locks" && args[1] === "status") cwds.push(cwd!);
+    return base(command, args, cwd, options);
+  };
 }
 
 function githubExec(fork = false): Exec {
@@ -222,6 +230,24 @@ test("repository catalog queries preserve their ordered rows", async () => {
     { tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
     { tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", installed: 0 },
   ]);
+});
+
+test("a root-bound query runs git status on that root only by default", async () => {
+  const cwds: string[] = [];
+  await query("git-status", undefined, { root: paths.alpha }, gitStatusExec(cwds));
+  assert.deepEqual(cwds, [paths.alpha]);
+});
+
+test("a query without root still runs git status on every agent root", async () => {
+  const cwds: string[] = [];
+  await query("dirty", undefined, {}, gitStatusExec(cwds));
+  assert.deepEqual(cwds, [paths.alpha, paths.beta]);
+});
+
+test("the agents scope overrides a root-bound query default", async () => {
+  const cwds: string[] = [];
+  await query("git-status", "agents", { root: paths.alpha }, gitStatusExec(cwds));
+  assert.deepEqual(cwds, [paths.alpha, paths.beta]);
 });
 
 test("report catalog queries join the fixture tables", async () => {

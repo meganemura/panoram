@@ -6,7 +6,7 @@
 import type { Database } from "solarsql";
 import type { Repo } from "./repo.ts";
 
-export type Scope = "agents" | "all";
+export type Scope = "root" | "agents" | "all";
 
 // Runs one child process and resolves with its stdout. Injectable so a
 // test can make one provider fail without stopping the real tool.
@@ -20,8 +20,8 @@ export type LoadContext = {
   db: Database;
   exec: Exec;
   scope: Scope;
-  // Explicit roots extend the roots discovered from agents and ghq. This lets
-  // a root query observe a repository before any agent enters it.
+  // A root-bound statement defaults to this one root, which avoids loading
+  // unrelated repositories. An explicit wider scope can include it too.
   roots: readonly string[];
   env: Readonly<Record<string, string | undefined>>;
   repo: Repo;

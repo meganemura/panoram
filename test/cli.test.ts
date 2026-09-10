@@ -60,6 +60,18 @@ test("expect-empty returns 0 for an empty result", async () => {
   assert.deepEqual(JSON.parse(stdout), { query: "sql", scope: "agents", me: null, params: {}, rows: [], providers: [] });
 });
 
+test("the root scope is accepted", async () => {
+  const { stdout } = await execFileAsync(process.execPath, ["cli.ts", "--sql", "select 1 as x", "--scope", "root"], { cwd: process.cwd(), encoding: "utf8" });
+  assert.equal(JSON.parse(stdout).scope, "root");
+});
+
+test("an invalid scope exits with status 2", async () => {
+  await assert.rejects(
+    execFileAsync(process.execPath, ["cli.ts", "--sql", "select 1 as x", "--scope", "invalid"], { cwd: process.cwd(), encoding: "utf8" }),
+    (error: NodeJS.ErrnoException & { code?: number }) => error.code === 2,
+  );
+});
+
 function resultForExitCode(rows: number, oks: readonly number[]) {
   return {
     rows: Array.from({ length: rows }, () => ({})),

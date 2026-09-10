@@ -13,7 +13,7 @@ Nothing is cached, and panoram never writes to a provider.
 Call it from anywhere:
 
 ```sh
-panoram <query> [--root DIR] [--scope agents|all] [--me PANE] [--tsv]
+panoram <query> [--root DIR] [--scope root|agents|all] [--me PANE] [--tsv]
 ```
 
 `panoram` is on PATH after `npm link` in the checkout; `node /path/to/panoram/cli.ts` is the same command without the link.
@@ -69,7 +69,7 @@ The table lists the queries the workflow names. Every query, with its parameters
 | `issues-unattended` | | Repositories with open beads issues and no agent. |
 
 `--root` defaults to the git toplevel of the current directory.
-`--scope all` runs each repository-scoped provider on every ghq repository instead of the repositories with an agent; it takes a few seconds.
+A query that takes `--root` looks at that repository only. `--scope all` runs each repository-scoped provider on every ghq repository instead of the repositories with an agent; it takes a few seconds.
 
 ## Where the reasoning is
 

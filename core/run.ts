@@ -37,15 +37,16 @@ export type RunOptions = {
   exec?: Exec;
   env?: Readonly<Record<string, string | undefined>>;
   repo?: Repo;
-  // Parameters for the statement. A string `root` also extends the roots
-  // repository-scoped loaders inspect. `me` is filled by the core when the
-  // statement names it and the caller did not pass it.
+  // Parameters for the statement. A root-bound statement defaults to the
+  // root scope; an explicit scope can widen it. `me` is filled by the core
+  // when the statement names it and the caller did not pass it.
   params?: Record<string, unknown>;
 };
 
 export type RunResult<R> = {
   rows: R[];
   providers: ProviderRow[];
+  scope: Scope;
   // The caller's own row, when a provider could tell.
   me: string | null;
   // The values bound to the statement. They identify an empty observation.
@@ -57,6 +58,7 @@ export type ReportSection = readonly [name: string, query: Query<string, Entry>]
 export type ReportResult = {
   sections: Record<string, Record<string, unknown>[]>;
   providers: ProviderRow[];
+  scope: Scope;
   me: string | null;
   params: Record<string, unknown>;
 };
@@ -96,6 +98,7 @@ type RunState = {
   raw: DatabaseSync;
   db: Database;
   providers: ProviderRow[];
+  scope: Scope;
   me: string | null;
   params: Record<string, unknown>;
 };
@@ -105,10 +108,11 @@ async function prepare(tables: readonly string[] | ((raw: DatabaseSync) => reado
   migrate(raw, migrations);
   const db = node(raw);
   const root = options.params?.["root"];
+  const scope = options.scope ?? (typeof root === "string" && paramNames.includes("root") ? "root" : "agents");
   const ctx = {
     db,
     exec: options.exec ?? exec,
-    scope: options.scope ?? "agents",
+    scope,
     roots: typeof root === "string" ? [root] : [],
     env: options.env ?? process.env,
     repo: options.repo ?? fsRepo,
@@ -149,7 +153,7 @@ async function prepare(tables: readonly string[] | ((raw: DatabaseSync) => reado
     if (params[name] === undefined) throw new Error(`missing parameter: ${name}`);
     bound[name] = params[name];
   }
-  return { raw, db, providers: await db.all(providerQueries.all), me, params: bound };
+  return { raw, db, providers: await db.all(providerQueries.all), scope, me, params: bound };
 }
 
 function round(ms: number): number {
