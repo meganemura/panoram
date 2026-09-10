@@ -1,0 +1,32 @@
+// The contract between the core and a provider. The core knows a loader by
+// this shape only: its name, the tables it fills, the loaders it runs
+// after, and how to fill them. What a loader runs and how it parses the
+// answer stays in the provider.
+// Boundary: types only. run.ts schedules; a provider's loader.ts loads.
+import type { Database } from "solarsql";
+
+export type Scope = "agents" | "all";
+
+// Runs one child process and resolves with its stdout. Injectable so a
+// test can make one provider fail without stopping the real tool.
+export type Exec = (command: string, args: readonly string[], cwd?: string) => Promise<string>;
+
+export type LoadContext = {
+  db: Database;
+  exec: Exec;
+  scope: Scope;
+  env: Readonly<Record<string, string | undefined>>;
+};
+
+export type Loader = {
+  name: string;
+  // The tables this loader fills. The core maps a query's reads to loaders
+  // through this list.
+  tables: readonly string[];
+  // Loaders whose tables this one reads while it loads.
+  after: readonly string[];
+  load(ctx: LoadContext): Promise<void>;
+  // The caller's own row, when this provider can tell. The core binds it
+  // as `:me` to a query that names that parameter.
+  self?(ctx: LoadContext): Promise<string | null>;
+};
