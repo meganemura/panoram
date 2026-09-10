@@ -12,6 +12,7 @@ The tables, the loaders, and the queries are written with solarsql, so the shape
 
 The design records live in `docs/` as ADRs.
 Read them before you change the shape.
+The usage documentation of solarsql is `node_modules/solarsql/skills/solarsql/SKILL.md`.
 
 ## Visibility
 
@@ -27,4 +28,5 @@ If you want to cite an internal document, write its substance in place instead.
 - `.claude-team/` holds task specs and reports. It is gitignored. Never reference it from committed content.
 - The npm package `panoram` is reserved at 0.0.0 with no code. Do not publish without the owner's explicit approval.
 - panoram reads. It never writes to a provider. Actions stay with the tools that own the state.
+- The database is new on every call, so there is one migration. On a schema change, delete `migrations/`, run `npx solarsql build panoram.config.ts`, then `npx solarsql migration initial panoram.config.ts`, and commit what they wrote.
 - panoram holds no cache. A provider that does not answer gives an empty table and a row in `providers` that says so.
