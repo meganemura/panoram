@@ -13,7 +13,7 @@ export const agents = table(`
     session_id text,
     name text,
     agent text not null,
-    status text not null,
+    agent_status text not null,
     focused integer not null default 0,
     cwd text not null,
     foreground_cwd text,
@@ -27,20 +27,20 @@ export const agents = table(`
 export const herdrQueries = queries(generated, {
   // Every agent. `:me` excludes the caller; null keeps everyone.
   all: `
-    select pane_id, name, agent, status, cwd, root, workspace_id, title
+    select pane_id, name, agent, agent_status, cwd, root, workspace_id, title
     from agents where (:me is null or pane_id <> :me) order by pane_id`,
   // Agents in one repository, by its root.
   inDir: `
-    select pane_id, name, agent, status, cwd, title
+    select pane_id, name, agent, agent_status, cwd, title
     from agents where root = :root and (:me is null or pane_id <> :me) order by pane_id`,
   // Agents that work right now.
   working: `
-    select pane_id, name, agent, root, cwd, title
-    from agents where status = 'working' and (:me is null or pane_id <> :me) order by pane_id`,
+    select pane_id, name, agent, agent_status, root, cwd, title
+    from agents where agent_status = 'working' and (:me is null or pane_id <> :me) order by pane_id`,
   // Which workspace holds agents of which repository.
   workspaces: `
     select workspace_id, root, cast(count(*) as integer) as agents,
-           cast(sum(status = 'working') as integer) as working
+           cast(sum(agent_status = 'working') as integer) as working
     from agents group by workspace_id, root order by workspace_id, root`,
   // The distinct roots the agents sit in. The git loader reads this.
   roots: `select distinct root from agents where root is not null`,
@@ -53,8 +53,8 @@ export const herdrQueries = queries(generated, {
 export const herdrCommands = commands(generated, {
   load: {
     plan: [
-      `insert into agents (pane_id, session_id, name, agent, status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)
-       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'status', value ->> 'focused',
+      `insert into agents (pane_id, session_id, name, agent, agent_status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)
+       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'agent_status', value ->> 'focused',
               value ->> 'cwd', value ->> 'foreground_cwd', value ->> 'root', value ->> 'workspace_id', value ->> 'tab_id', value ->> 'title'
        from json_each(:rows)`,
     ],

@@ -12,7 +12,7 @@ Every table is empty until a statement reads it; a statement pays only for the p
 | `session_id` | text? | The session id the agent's herdr integration reported. |
 | `name` | text? | The name given in herdr. |
 | `agent` | text | The detected agent: `claude`, `codex`, ... |
-| `status` | text | `working`, `idle`, `blocked`, `unknown`. |
+| `agent_status` | text | herdr's `working`, `idle`, `blocked`, or `unknown`. |
 | `focused` | integer | 1 for the pane herdr has in focus. |
 | `cwd` | text | The pane's working directory. |
 | `foreground_cwd` | text? | The foreground process's directory when it differs. |
@@ -20,7 +20,9 @@ Every table is empty until a statement reads it; a statement pays only for the p
 | `workspace_id`, `tab_id` | text? | Where the pane sits. |
 | `title` | text? | The terminal title. |
 
-## `sessions` (Claude Code, Codex)
+## `sessions`, `claude_sessions`, and `codex_sessions`
+
+`sessions` is the supertype for data both sources share. Each subtype has one row for its matching parent and keeps source column names and values.
 
 | Column | Type | Meaning |
 | --- | --- | --- |
@@ -29,12 +31,13 @@ Every table is empty until a statement reads it; a statement pays only for the p
 | `pid` | integer? | The process. |
 | `cwd`, `root` | text, text? | Where it runs. |
 | `name` | text? | The name the user gave. |
-| `kind` | text? | Claude Code's kind, or Codex's source. |
-| `status` | text? | Claude Code's status; null for Codex. |
-| `version` | text? | The CLI version. |
 | `started_at`, `updated_at` | integer? | Milliseconds since the epoch. |
 | `last_turn_at` | integer? | The timestamp of the last record in the transcript. |
 | `last_branch` | text? | The branch the last record names. |
+
+`claude_sessions`: `session_id` (key and `sessions` reference), `kind?`, `entrypoint?`, `status?`, `status_updated_at?`, `name_source?`, `version?`, `pid_domain?`, `peer_protocol?`.
+
+`codex_sessions`: `session_id` (key and `sessions` reference), `source?`, `thread_source?`, `model?`, `model_provider?`, `reasoning_effort?`, `cli_version?`, `sandbox_policy?`, `approval_mode?`, `git_branch?`, `git_origin_url?`, `title?`, `tokens_used`, `archived`.
 
 ## `git_status` and `worktrees` (git)
 

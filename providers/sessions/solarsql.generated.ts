@@ -3,26 +3,50 @@
 // Module sessions.
 import type { Id, Meta } from "solarsql";
 
+// The id of a row of claude_sessions.
+export type ClaudeSessionsId = Id<"claude_sessions">;
+// The id of a row of codex_sessions.
+export type CodexSessionsId = Id<"codex_sessions">;
 // The id of a row of sessions.
 export type SessionsId = Id<"sessions">;
 
 export type Generated = {
-  "insert or ignore into sessions (session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch)\n       select value ->> 'session_id', value ->> 'agent', value ->> 'pid', value ->> 'cwd', value ->> 'root', value ->> 'name', value ->> 'kind', value ->> 'status', value ->> 'version', value ->> 'started_at', value ->> 'updated_at', value ->> 'last_turn_at', value ->> 'last_branch'\n       from json_each(:rows)": {
-    params: { rows: readonly { "session_id": SessionsId; "agent": string; "pid": number | null; "cwd": string; "root": string | null; "name": string | null; "kind": string | null; "status": string | null; "version": string | null; "started_at": number | null; "updated_at": number | null; "last_turn_at": number | null; "last_branch": string | null }[] };
+  "insert or ignore into sessions (session_id, agent, pid, cwd, root, name, started_at, updated_at, last_turn_at, last_branch)\n       select value ->> 'session_id', value ->> 'agent', value ->> 'pid', value ->> 'cwd', value ->> 'root', value ->> 'name', value ->> 'started_at', value ->> 'updated_at', value ->> 'last_turn_at', value ->> 'last_branch'\n       from json_each(:rows)": {
+    params: { rows: readonly { "session_id": SessionsId; "agent": string; "pid": number | null; "cwd": string; "root": string | null; "name": string | null; "started_at": number | null; "updated_at": number | null; "last_turn_at": number | null; "last_branch": string | null }[] };
     row: {};
   };
-  "\n    select session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch\n    from sessions order by agent, started_at": {
-    params: {};
-    row: { session_id: SessionsId; agent: string; pid: number | null; cwd: string; root: string | null; name: string | null; kind: string | null; status: string | null; version: string | null; started_at: number | null; updated_at: number | null; last_turn_at: number | null; last_branch: string | null };
+  "insert or ignore into claude_sessions (session_id, kind, entrypoint, status, status_updated_at, name_source, version, pid_domain, peer_protocol)\n       select value ->> 'session_id', value ->> 'kind', value ->> 'entrypoint', value ->> 'status', value ->> 'status_updated_at', value ->> 'name_source', value ->> 'version', value ->> 'pid_domain', value ->> 'peer_protocol'\n       from json_each(:rows)": {
+    params: { rows: readonly { "session_id": ClaudeSessionsId; "kind": string | null; "entrypoint": string | null; "status": string | null; "status_updated_at": number | null; "name_source": string | null; "version": string | null; "pid_domain": string | null; "peer_protocol": number | null }[] };
+    row: {};
   };
-  "\n    select session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch,\n           cast((unixepoch('subsec') * 1000 - updated_at) / 60000 as integer) as idle_minutes\n    from sessions order by updated_at asc": {
+  "insert or ignore into codex_sessions (session_id, source, thread_source, model, model_provider, reasoning_effort, cli_version, sandbox_policy, approval_mode, git_branch, git_origin_url, title, tokens_used, archived)\n       select value ->> 'session_id', value ->> 'source', value ->> 'thread_source', value ->> 'model', value ->> 'model_provider', value ->> 'reasoning_effort', value ->> 'cli_version', value ->> 'sandbox_policy', value ->> 'approval_mode', value ->> 'git_branch', value ->> 'git_origin_url', value ->> 'title', value ->> 'tokens_used', value ->> 'archived'\n       from json_each(:rows)": {
+    params: { rows: readonly { "session_id": CodexSessionsId; "source": string | null; "thread_source": string | null; "model": string | null; "model_provider": string | null; "reasoning_effort": string | null; "cli_version": string | null; "sandbox_policy": string | null; "approval_mode": string | null; "git_branch": string | null; "git_origin_url": string | null; "title": string | null; "tokens_used": number; "archived": number }[] };
+    row: {};
+  };
+  "\n    select session_id, agent, pid, cwd, root, name, started_at, updated_at, last_turn_at, last_branch\n    from sessions order by agent, started_at": {
     params: {};
-    row: { session_id: SessionsId; agent: string; pid: number | null; cwd: string; root: string | null; name: string | null; kind: string | null; status: string | null; version: string | null; started_at: number | null; updated_at: number | null; last_turn_at: number | null; last_branch: string | null; idle_minutes: number | null };
+    row: { session_id: SessionsId; agent: string; pid: number | null; cwd: string; root: string | null; name: string | null; started_at: number | null; updated_at: number | null; last_turn_at: number | null; last_branch: string | null };
+  };
+  "\n    select session_id, agent, pid, cwd, root, name, started_at, updated_at, last_turn_at, last_branch,\n           cast((unixepoch('subsec') * 1000 - updated_at) / 60000 as integer) as idle_minutes\n    from sessions order by updated_at asc": {
+    params: {};
+    row: { session_id: SessionsId; agent: string; pid: number | null; cwd: string; root: string | null; name: string | null; started_at: number | null; updated_at: number | null; last_turn_at: number | null; last_branch: string | null; idle_minutes: number | null };
+  };
+  "\n    select c.session_id, s.cwd, s.root, s.name, s.updated_at, c.kind, c.entrypoint, c.status, c.status_updated_at, c.name_source, c.version, c.pid_domain, c.peer_protocol\n    from claude_sessions c join sessions s on s.session_id = c.session_id\n    order by s.updated_at desc": {
+    params: {};
+    row: { session_id: ClaudeSessionsId; cwd: string; root: string | null; name: string | null; updated_at: number | null; kind: string | null; entrypoint: string | null; status: string | null; status_updated_at: number | null; name_source: string | null; version: string | null; pid_domain: string | null; peer_protocol: number | null };
+  };
+  "\n    select x.session_id, s.cwd, s.root, s.name, s.updated_at, x.model, x.reasoning_effort, x.source, x.thread_source, x.model_provider, x.cli_version, x.sandbox_policy, x.approval_mode, x.git_branch, x.git_origin_url, x.title, x.tokens_used, x.archived\n    from codex_sessions x join sessions s on s.session_id = x.session_id\n    order by s.updated_at desc": {
+    params: {};
+    row: { session_id: CodexSessionsId; cwd: string; root: string | null; name: string | null; updated_at: number | null; model: string | null; reasoning_effort: string | null; source: string | null; thread_source: string | null; model_provider: string | null; cli_version: string | null; sandbox_policy: string | null; approval_mode: string | null; git_branch: string | null; git_origin_url: string | null; title: string | null; tokens_used: number; archived: number };
   };
 };
 
 export const generated: Meta<Generated> = {
-  "insert or ignore into sessions (session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch)\n       select value ->> 'session_id', value ->> 'agent', value ->> 'pid', value ->> 'cwd', value ->> 'root', value ->> 'name', value ->> 'kind', value ->> 'status', value ->> 'version', value ->> 'started_at', value ->> 'updated_at', value ->> 'last_turn_at', value ->> 'last_branch'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: [] },
-  "\n    select session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch\n    from sessions order by agent, started_at": { params: [], encode: [], json: [], reads: ["sessions"] },
-  "\n    select session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch,\n           cast((unixepoch('subsec') * 1000 - updated_at) / 60000 as integer) as idle_minutes\n    from sessions order by updated_at asc": { params: [], encode: [], json: [], reads: ["sessions"] },
+  "insert or ignore into sessions (session_id, agent, pid, cwd, root, name, started_at, updated_at, last_turn_at, last_branch)\n       select value ->> 'session_id', value ->> 'agent', value ->> 'pid', value ->> 'cwd', value ->> 'root', value ->> 'name', value ->> 'started_at', value ->> 'updated_at', value ->> 'last_turn_at', value ->> 'last_branch'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: ["claude_sessions", "codex_sessions"] },
+  "insert or ignore into claude_sessions (session_id, kind, entrypoint, status, status_updated_at, name_source, version, pid_domain, peer_protocol)\n       select value ->> 'session_id', value ->> 'kind', value ->> 'entrypoint', value ->> 'status', value ->> 'status_updated_at', value ->> 'name_source', value ->> 'version', value ->> 'pid_domain', value ->> 'peer_protocol'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: ["sessions"] },
+  "insert or ignore into codex_sessions (session_id, source, thread_source, model, model_provider, reasoning_effort, cli_version, sandbox_policy, approval_mode, git_branch, git_origin_url, title, tokens_used, archived)\n       select value ->> 'session_id', value ->> 'source', value ->> 'thread_source', value ->> 'model', value ->> 'model_provider', value ->> 'reasoning_effort', value ->> 'cli_version', value ->> 'sandbox_policy', value ->> 'approval_mode', value ->> 'git_branch', value ->> 'git_origin_url', value ->> 'title', value ->> 'tokens_used', value ->> 'archived'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: ["sessions"] },
+  "\n    select session_id, agent, pid, cwd, root, name, started_at, updated_at, last_turn_at, last_branch\n    from sessions order by agent, started_at": { params: [], encode: [], json: [], reads: ["sessions"] },
+  "\n    select session_id, agent, pid, cwd, root, name, started_at, updated_at, last_turn_at, last_branch,\n           cast((unixepoch('subsec') * 1000 - updated_at) / 60000 as integer) as idle_minutes\n    from sessions order by updated_at asc": { params: [], encode: [], json: [], reads: ["sessions"] },
+  "\n    select c.session_id, s.cwd, s.root, s.name, s.updated_at, c.kind, c.entrypoint, c.status, c.status_updated_at, c.name_source, c.version, c.pid_domain, c.peer_protocol\n    from claude_sessions c join sessions s on s.session_id = c.session_id\n    order by s.updated_at desc": { params: [], encode: [], json: [], reads: ["claude_sessions", "sessions"] },
+  "\n    select x.session_id, s.cwd, s.root, s.name, s.updated_at, x.model, x.reasoning_effort, x.source, x.thread_source, x.model_provider, x.cli_version, x.sandbox_policy, x.approval_mode, x.git_branch, x.git_origin_url, x.title, x.tokens_used, x.archived\n    from codex_sessions x join sessions s on s.session_id = x.session_id\n    order by s.updated_at desc": { params: [], encode: [], json: [], reads: ["codex_sessions", "sessions"] },
 };

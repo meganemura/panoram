@@ -35,7 +35,7 @@ export const herdrLoader: Loader = {
       session_id: a.agent_session?.value ?? null,
       name: a.name ?? null,
       agent: a.agent,
-      status: a.agent_status,
+      agent_status: a.agent_status,
       focused: a.focused ? 1 : 0,
       cwd: a.cwd,
       foreground_cwd: a.foreground_cwd ?? null,

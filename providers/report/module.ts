@@ -9,13 +9,13 @@ import { generated } from "./solarsql.generated.ts";
 export const reportQueries = queries(generated, {
   // Agents that work in a repository with uncommitted changes.
   agentsInDirtyRepos: `
-    select a.pane_id, a.name, a.status, a.root, g.branch, g.dirty_count, g.untracked_count
+    select a.pane_id, a.name, a.agent_status, a.root, g.branch, g.dirty_count, g.untracked_count
     from agents a join git_status g on g.root = a.root
     where g.dirty_count > 0 and (:me is null or a.pane_id <> :me)
     order by g.dirty_count desc, a.pane_id`,
   // Repositories with more than one agent, and their dirt.
   crowdedRepos: `
-    select a.root, cast(count(*) as integer) as agents, cast(sum(a.status = 'working') as integer) as working,
+    select a.root, cast(count(*) as integer) as agents, cast(sum(a.agent_status = 'working') as integer) as working,
            cast(coalesce(g.dirty_count, 0) as integer) as dirty_count
     from agents a left join git_status g on g.root = a.root
     where a.root is not null
@@ -27,7 +27,7 @@ export const reportQueries = queries(generated, {
     where a.pane_id is null and w.path <> w.repo_root order by w.path`,
   // Agents whose root is not a ghq repository: scratch, temp, or no repository.
   agentsOutsideGhq: `
-    select a.pane_id, a.name, a.status, a.cwd, a.root from agents a
+    select a.pane_id, a.name, a.agent_status, a.cwd, a.root from agents a
     left join repos r on r.path = a.root
     where r.path is null and (:me is null or a.pane_id <> :me) order by a.pane_id`,
   // Repositories with uncommitted changes and no agent at all.
@@ -56,19 +56,28 @@ export const reportQueries = queries(generated, {
     group by u.tool having count(distinct u.version) > 1 order by u.tool`,
   // Agent panes with the session record that describes their recent work.
   agentsWithSessions: `
-    select a.pane_id, a.agent, a.status, s.name, s.kind, s.started_at, s.updated_at, s.last_turn_at, s.last_branch, a.root,
+    select a.pane_id, a.agent, a.agent_status, s.name, c.status as claude_status, c.kind, x.model, x.source, s.started_at, s.updated_at, s.last_turn_at, s.last_branch, a.root,
            cast((unixepoch('subsec') * 1000 - s.updated_at) / 60000 as integer) as idle_minutes
     from agents a join sessions s on s.session_id = a.session_id
+    left join claude_sessions c on c.session_id = s.session_id
+    left join codex_sessions x on x.session_id = s.session_id
     where :me is null or a.pane_id <> :me
     order by idle_minutes desc`,
   // Live sessions can lack a pane when they run headlessly or elsewhere.
   sessionsWithoutPane: `
-    select s.session_id, s.agent, s.cwd, s.root, s.name, s.kind, s.updated_at
+    select s.session_id, s.agent, s.cwd, s.root, s.name, s.updated_at
     from sessions s left join agents a on a.session_id = s.session_id
     where a.pane_id is null order by s.agent, s.updated_at`,
+  // Codex thread fields stay distinct from Claude Code fields in this join.
+  codexThreadsWithAgents: `
+    select a.pane_id, a.root, x.model, x.reasoning_effort, x.source, x.tokens_used, s.updated_at
+    from agents a join sessions s on s.session_id = a.session_id
+    join codex_sessions x on x.session_id = s.session_id
+    where :me is null or a.pane_id <> :me
+    order by s.updated_at desc`,
   // Agents whose current branch has an open pull request.
   prsWithAgents: `
-    select a.pane_id, a.name, a.status, p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url
+    select a.pane_id, a.name, a.agent_status, p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url
     from agents a join git_status g on g.root = a.root
     join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo
     where :me is null or a.pane_id <> :me

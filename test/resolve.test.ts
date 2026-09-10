@@ -13,7 +13,7 @@ import { migrate } from "solarsql/node";
 
 const tablePool = Array.from({ length: 16 }, (_, index) => `t${index}`);
 const undeclaredTableNames = ["undeclared0", "undeclared1", "undeclared2"];
-const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "issues", "workflow_runs", "providers"];
+const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "sessions", "claude_sessions", "codex_sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "issues", "workflow_runs", "providers"];
 
 type LoaderGraph = {
   loaders: Loader[];
@@ -94,6 +94,8 @@ test("tablesRead finds every catalog query's declared tables", () => {
       "tools-in-dir": ["tool_uses"],
       sessions: ["sessions"],
       "idle-sessions": ["sessions"],
+      "claude-sessions": ["claude_sessions", "sessions"],
+      "codex-sessions": ["codex_sessions", "sessions"],
       "pull-requests": ["pull_requests"],
       "review-requests": ["review_requests"],
       "processes-in-dir": ["processes"],
@@ -109,8 +111,9 @@ test("tablesRead finds every catalog query's declared tables", () => {
       "behind-upstream-with-agents": ["agents", "git_status"],
       "missing-tools-with-agents": ["agents", "tool_uses"],
       "tool-versions-split": ["agents", "tool_uses"],
-      "agents-with-sessions": ["agents", "sessions"],
+      "agents-with-sessions": ["agents", "claude_sessions", "codex_sessions", "sessions"],
       "sessions-without-pane": ["agents", "sessions"],
+      "codex-threads-with-agents": ["agents", "codex_sessions", "sessions"],
       "prs-with-agents": ["agents", "git_status", "pull_requests"],
       "failing-checks-with-agents": ["agents", "git_status", "pull_requests"],
       "review-requests-with-agents": ["agents", "review_requests"],

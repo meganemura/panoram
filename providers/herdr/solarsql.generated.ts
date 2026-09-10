@@ -7,23 +7,23 @@ import type { Id, Meta } from "solarsql";
 export type AgentsId = Id<"agents">;
 
 export type Generated = {
-  "insert into agents (pane_id, session_id, name, agent, status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)\n       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'status', value ->> 'focused',\n              value ->> 'cwd', value ->> 'foreground_cwd', value ->> 'root', value ->> 'workspace_id', value ->> 'tab_id', value ->> 'title'\n       from json_each(:rows)": {
-    params: { rows: readonly { "pane_id": AgentsId; "session_id": string | null; "name": string | null; "agent": string; "status": string; "focused": number; "cwd": string; "foreground_cwd": string | null; "root": string | null; "workspace_id": string | null; "tab_id": string | null; "title": string | null }[] };
+  "insert into agents (pane_id, session_id, name, agent, agent_status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)\n       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'agent_status', value ->> 'focused',\n              value ->> 'cwd', value ->> 'foreground_cwd', value ->> 'root', value ->> 'workspace_id', value ->> 'tab_id', value ->> 'title'\n       from json_each(:rows)": {
+    params: { rows: readonly { "pane_id": AgentsId; "session_id": string | null; "name": string | null; "agent": string; "agent_status": string; "focused": number; "cwd": string; "foreground_cwd": string | null; "root": string | null; "workspace_id": string | null; "tab_id": string | null; "title": string | null }[] };
     row: {};
   };
-  "\n    select pane_id, name, agent, status, cwd, root, workspace_id, title\n    from agents where (:me is null or pane_id <> :me) order by pane_id": {
+  "\n    select pane_id, name, agent, agent_status, cwd, root, workspace_id, title\n    from agents where (:me is null or pane_id <> :me) order by pane_id": {
     params: { me: AgentsId | null };
-    row: { pane_id: AgentsId; name: string | null; agent: string; status: string; cwd: string; root: string | null; workspace_id: string | null; title: string | null };
+    row: { pane_id: AgentsId; name: string | null; agent: string; agent_status: string; cwd: string; root: string | null; workspace_id: string | null; title: string | null };
   };
-  "\n    select pane_id, name, agent, status, cwd, title\n    from agents where root = :root and (:me is null or pane_id <> :me) order by pane_id": {
+  "\n    select pane_id, name, agent, agent_status, cwd, title\n    from agents where root = :root and (:me is null or pane_id <> :me) order by pane_id": {
     params: { root: string | null; me: AgentsId | null };
-    row: { pane_id: AgentsId; name: string | null; agent: string; status: string; cwd: string; title: string | null };
+    row: { pane_id: AgentsId; name: string | null; agent: string; agent_status: string; cwd: string; title: string | null };
   };
-  "\n    select pane_id, name, agent, root, cwd, title\n    from agents where status = 'working' and (:me is null or pane_id <> :me) order by pane_id": {
+  "\n    select pane_id, name, agent, agent_status, root, cwd, title\n    from agents where agent_status = 'working' and (:me is null or pane_id <> :me) order by pane_id": {
     params: { me: AgentsId | null };
-    row: { pane_id: AgentsId; name: string | null; agent: string; root: string | null; cwd: string; title: string | null };
+    row: { pane_id: AgentsId; name: string | null; agent: string; agent_status: string; root: string | null; cwd: string; title: string | null };
   };
-  "\n    select workspace_id, root, cast(count(*) as integer) as agents,\n           cast(sum(status = 'working') as integer) as working\n    from agents group by workspace_id, root order by workspace_id, root": {
+  "\n    select workspace_id, root, cast(count(*) as integer) as agents,\n           cast(sum(agent_status = 'working') as integer) as working\n    from agents group by workspace_id, root order by workspace_id, root": {
     params: {};
     row: { workspace_id: string | null; root: string | null; agents: number; working: number | null };
   };
@@ -42,11 +42,11 @@ export type Generated = {
 };
 
 export const generated: Meta<Generated> = {
-  "insert into agents (pane_id, session_id, name, agent, status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)\n       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'status', value ->> 'focused',\n              value ->> 'cwd', value ->> 'foreground_cwd', value ->> 'root', value ->> 'workspace_id', value ->> 'tab_id', value ->> 'title'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: [] },
-  "\n    select pane_id, name, agent, status, cwd, root, workspace_id, title\n    from agents where (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [], reads: ["agents"] },
-  "\n    select pane_id, name, agent, status, cwd, title\n    from agents where root = :root and (:me is null or pane_id <> :me) order by pane_id": { params: ["root", "me"], encode: [], json: [], reads: ["agents"] },
-  "\n    select pane_id, name, agent, root, cwd, title\n    from agents where status = 'working' and (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [], reads: ["agents"] },
-  "\n    select workspace_id, root, cast(count(*) as integer) as agents,\n           cast(sum(status = 'working') as integer) as working\n    from agents group by workspace_id, root order by workspace_id, root": { params: [], encode: [], json: [], reads: ["agents"] },
+  "insert into agents (pane_id, session_id, name, agent, agent_status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)\n       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'agent_status', value ->> 'focused',\n              value ->> 'cwd', value ->> 'foreground_cwd', value ->> 'root', value ->> 'workspace_id', value ->> 'tab_id', value ->> 'title'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: [] },
+  "\n    select pane_id, name, agent, agent_status, cwd, root, workspace_id, title\n    from agents where (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [], reads: ["agents"] },
+  "\n    select pane_id, name, agent, agent_status, cwd, title\n    from agents where root = :root and (:me is null or pane_id <> :me) order by pane_id": { params: ["root", "me"], encode: [], json: [], reads: ["agents"] },
+  "\n    select pane_id, name, agent, agent_status, root, cwd, title\n    from agents where agent_status = 'working' and (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [], reads: ["agents"] },
+  "\n    select workspace_id, root, cast(count(*) as integer) as agents,\n           cast(sum(agent_status = 'working') as integer) as working\n    from agents group by workspace_id, root order by workspace_id, root": { params: [], encode: [], json: [], reads: ["agents"] },
   "select distinct root from agents where root is not null": { params: [], encode: [], json: [], reads: ["agents"] },
   "select pane_id from agents where session_id = :session_id": { params: ["session_id"], encode: [], json: [], reads: ["agents"] },
   "select pane_id from agents where focused = 1 limit 1": { params: [], encode: [], json: [], reads: ["agents"] },

@@ -9,7 +9,7 @@ JSON is the default output:
   "query": "in-dir",
   "scope": "agents",
   "me": "w3S:p1",
-  "rows": [ { "pane_id": "w12:p2", "name": null, "agent": "claude", "status": "idle", "cwd": "...", "title": "HQ" } ],
+  "rows": [ { "pane_id": "w12:p2", "name": null, "agent": "claude", "agent_status": "idle", "cwd": "...", "title": "HQ" } ],
   "providers": [
     { "name": "herdr", "ok": 1, "observed_at": 1789038132395, "ms": 185.2, "error": null }
   ]

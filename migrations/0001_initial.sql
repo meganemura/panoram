@@ -4,7 +4,7 @@ CREATE TABLE agents (
     session_id text,
     name text,
     agent text not null,
-    status text not null,
+    agent_status text not null,
     focused integer not null default 0,
     cwd text not null,
     foreground_cwd text,
@@ -12,6 +12,33 @@ CREATE TABLE agents (
     workspace_id text,
     tab_id text,
     title text
+  ) strict;
+CREATE TABLE claude_sessions (
+    session_id text primary key not null references sessions(session_id),
+    kind text,
+    entrypoint text,
+    status text,
+    status_updated_at integer,
+    name_source text,
+    version text,
+    pid_domain text,
+    peer_protocol integer
+  ) strict;
+CREATE TABLE codex_sessions (
+    session_id text primary key not null references sessions(session_id),
+    source text,
+    thread_source text,
+    model text,
+    model_provider text,
+    reasoning_effort text,
+    cli_version text,
+    sandbox_policy text,
+    approval_mode text,
+    git_branch text,
+    git_origin_url text,
+    title text,
+    tokens_used integer not null default 0,
+    archived integer not null default 0
   ) strict;
 CREATE TABLE git_status (
     root text primary key not null,
@@ -117,9 +144,6 @@ CREATE TABLE sessions (
     cwd text not null,
     root text,
     name text,
-    kind text,
-    status text,
-    version text,
     started_at integer,
     updated_at integer,
     last_turn_at integer,

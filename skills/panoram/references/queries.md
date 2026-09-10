@@ -8,13 +8,13 @@ Columns marked `?` can be null.
 
 | Query | Parameters | Columns |
 | --- | --- | --- |
-| `agents` | | `pane_id`, `name?`, `agent`, `status`, `cwd`, `root?`, `workspace_id?`, `title?` |
-| `in-dir` | `root` | `pane_id`, `name?`, `agent`, `status`, `cwd`, `title?` |
-| `working` | | `pane_id`, `name?`, `agent`, `root?`, `cwd`, `title?` |
+| `agents` | | `pane_id`, `name?`, `agent`, `agent_status`, `cwd`, `root?`, `workspace_id?`, `title?` |
+| `in-dir` | `root` | `pane_id`, `name?`, `agent`, `agent_status`, `cwd`, `title?` |
+| `working` | | `pane_id`, `name?`, `agent`, `agent_status`, `root?`, `cwd`, `title?` |
 | `workspaces` | | `workspace_id?`, `root?`, `agents`, `working?` |
 
 `agent` is the label herdr detected (`claude`, `codex`, ...).
-`status` is herdr's reading: `working`, `idle`, `blocked`, `unknown`.
+`agent_status` is herdr's field and uses herdr's values: `working`, `idle`, `blocked`, `unknown`.
 `root` is null for an agent outside any repository.
 `agents`, `in-dir`, and `working` exclude `me`.
 
@@ -22,14 +22,16 @@ Columns marked `?` can be null.
 
 | Query | Parameters | Columns |
 | --- | --- | --- |
-| `sessions` | | `session_id`, `agent`, `pid?`, `cwd`, `root?`, `name?`, `kind?`, `status?`, `version?`, `started_at?`, `updated_at?`, `last_turn_at?`, `last_branch?` |
+| `sessions` | | `session_id`, `agent`, `pid?`, `cwd`, `root?`, `name?`, `started_at?`, `updated_at?`, `last_turn_at?`, `last_branch?` |
 | `idle-sessions` | | the same, plus `idle_minutes?`, ordered by `updated_at` ascending |
-| `agents-with-sessions` | | `pane_id`, `agent`, `status`, `name?`, `kind?`, `started_at?`, `updated_at?`, `last_turn_at?`, `last_branch?`, `root?`, `idle_minutes?` |
-| `sessions-without-pane` | | `session_id`, `agent`, `cwd`, `root?`, `name?`, `kind?`, `updated_at?` |
+| `claude-sessions` | | `session_id`, `cwd`, `root?`, `name?`, `updated_at?`, `kind?`, `entrypoint?`, `status?`, `status_updated_at?`, `name_source?`, `version?`, `pid_domain?`, `peer_protocol?` |
+| `codex-sessions` | | `session_id`, `cwd`, `root?`, `name?`, `updated_at?`, `model?`, `reasoning_effort?`, `source?`, `thread_source?`, `model_provider?`, `cli_version?`, `sandbox_policy?`, `approval_mode?`, `git_branch?`, `git_origin_url?`, `title?`, `tokens_used`, `archived` |
+| `agents-with-sessions` | | `pane_id`, `agent`, `agent_status`, `name?`, `claude_status?`, `kind?`, `model?`, `source?`, `started_at?`, `updated_at?`, `last_turn_at?`, `last_branch?`, `root?`, `idle_minutes?` |
+| `sessions-without-pane` | | `session_id`, `agent`, `cwd`, `root?`, `name?`, `updated_at?` |
+| `codex-threads-with-agents` | | `pane_id`, `root?`, `model?`, `reasoning_effort?`, `source?`, `tokens_used`, `updated_at?` |
 
 `name` is the name the user gave the session.
-`kind` is Claude Code's kind (`interactive`, ...) or Codex's source (`cli`, `vscode`, ...).
-`status` is Claude Code's own status; Codex has none.
+`kind` and `claude_status` are Claude Code values. `source` is a Codex value.
 A session joins an agent through the session id herdr's integration reports; a session without one appears in `sessions-without-pane`.
 
 ## Git
@@ -38,7 +40,7 @@ A session joins an agent through the session id herdr's integration reports; a s
 | --- | --- | --- |
 | `dirty` | | `root`, `branch?`, `dirty_count`, `untracked_count` |
 | `worktrees` | `root` | `path`, `branch?`, `head?` |
-| `agents-in-dirty-repos` | | `pane_id`, `name?`, `status`, `root?`, `branch?`, `dirty_count`, `untracked_count` |
+| `agents-in-dirty-repos` | | `pane_id`, `name?`, `agent_status`, `root?`, `branch?`, `dirty_count`, `untracked_count` |
 | `crowded-repos` | | `root?`, `agents`, `working?`, `dirty_count` |
 | `idle-worktrees` | | `path`, `branch?`, `repo_root` |
 | `dirty-unattended` | | `root`, `branch?`, `dirty_count`, `untracked_count` |
@@ -53,7 +55,7 @@ A session joins an agent through the session id herdr's integration reports; a s
 | Query | Parameters | Columns |
 | --- | --- | --- |
 | `repos` | | `path`, `host`, `owner`, `name` |
-| `agents-outside-ghq` | | `pane_id`, `name?`, `status`, `cwd`, `root?` |
+| `agents-outside-ghq` | | `pane_id`, `name?`, `agent_status`, `cwd`, `root?` |
 
 ## Tools (mise)
 
@@ -73,7 +75,7 @@ A session joins an agent through the session id herdr's integration reports; a s
 | --- | --- | --- |
 | `pull-requests` | `root` | `id`, `repo`, `root?`, `number`, `title`, `head_branch?`, `head_repo?`, `base_branch?`, `author?`, `is_draft`, `state`, `review_decision?`, `checks?`, `updated_at`, `url` |
 | `review-requests` | | `id`, `repo`, `root?`, `number`, `title`, `author?`, `updated_at`, `url`, ordered by `updated_at` descending |
-| `prs-with-agents` | | `pane_id`, `name?`, `status`, `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url` |
+| `prs-with-agents` | | `pane_id`, `name?`, `agent_status`, `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url` |
 | `failing-checks-with-agents` | | `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url`, `agents` |
 | `review-requests-with-agents` | | `repo`, `number`, `title`, `author?`, `updated_at`, `url`, `agents` |
 

@@ -13,6 +13,10 @@ import type { Exec } from "../core/loader.ts";
 import type { Repo } from "../core/repo.ts";
 import { runSql } from "../core/run.ts";
 import { sessionsLoader, parseTranscriptTail } from "../providers/sessions/loader.ts";
+import { sessionCommands } from "../providers/sessions/module.ts";
+import type { ClaudeSessionsId } from "../providers/sessions/solarsql.generated.ts";
+import { migrations } from "../migrations/index.ts";
+import { migrate, node } from "solarsql/node";
 
 const claudeId = "claude-session";
 const codexId = "codex-thread";
@@ -39,7 +43,12 @@ async function fixtureHome(): Promise<string> {
     name: "Claude session",
     kind: "interactive",
     status: "idle",
+    statusUpdatedAt: 2100,
+    entrypoint: "cli",
+    nameSource: "user",
     version: "2.1.0",
+    pidDomain: "host",
+    peerProtocol: 1,
     startedAt: 1000,
     updatedAt: 2000,
   }));
@@ -61,8 +70,9 @@ async function fixtureHome(): Promise<string> {
       history_mode text not null default 'legacy', name text, is_pinned integer not null default 0, thread_section_id text,
       section_position integer, section_entered_at_ms integer, project_id text
     ) strict`);
-    state.prepare(`insert into threads (id, rollout_path, created_at, updated_at, source, model_provider, cwd, title, sandbox_policy, approval_mode, created_at_ms, updated_at_ms, cli_version)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(codexId, rollout, 3, 4, "cli", "openai", codexCwd, "", "workspace-write", "never", 3000, 4000, "0.1.0");
+    state.prepare(`insert into threads (id, rollout_path, created_at, updated_at, source, thread_source, model, model_provider, reasoning_effort, cwd, title, sandbox_policy, approval_mode, git_branch, git_origin_url, tokens_used, archived, created_at_ms, updated_at_ms, cli_version)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(codexId, rollout, 3, 4, "cli", "interactive", "gpt-5", "openai", "high", codexCwd, "Codex thread", "workspace-write", "never", "feature", "https://example.test/repo.git", 42, 0, 3000, 4000, "0.1.0");
   } finally {
     state.close();
   }
@@ -88,16 +98,32 @@ test("sessions loads live Claude Code and Codex rows from bounded records", asyn
   const home = await fixtureHome();
   try {
     const result = await runSql(
-      "select session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch from sessions order by agent",
+      "select session_id, agent, pid, cwd, root, name, started_at, updated_at, last_turn_at, last_branch from sessions order by agent",
       { loaders: [sessionsLoader], exec: execFor(home), repo: fixtureRepo(), env: { HOME: home }, params: {} },
     );
     assert.deepEqual(result.rows, [
-      { session_id: claudeId, agent: "claude", pid: process.pid, cwd: claudeCwd, root: "/roots/claude", name: "Claude session", kind: "interactive", status: "idle", version: "2.1.0", started_at: 1000, updated_at: 2000, last_turn_at: Date.parse("2026-09-10T00:00:00.000Z"), last_branch: "main" },
-      { session_id: codexId, agent: "codex", pid: process.pid, cwd: codexCwd, root: "/roots/codex", name: null, kind: "cli", status: null, version: "0.1.0", started_at: 3000, updated_at: 4000, last_turn_at: Date.parse("2026-09-10T00:01:00.000Z"), last_branch: "feature" },
+      { session_id: claudeId, agent: "claude", pid: process.pid, cwd: claudeCwd, root: "/roots/claude", name: "Claude session", started_at: 1000, updated_at: 2000, last_turn_at: Date.parse("2026-09-10T00:00:00.000Z"), last_branch: "main" },
+      { session_id: codexId, agent: "codex", pid: process.pid, cwd: codexCwd, root: "/roots/codex", name: null, started_at: 3000, updated_at: 4000, last_turn_at: Date.parse("2026-09-10T00:01:00.000Z"), last_branch: "feature" },
     ]);
+    const claude = await runSql("select session_id, kind, entrypoint, status, status_updated_at, name_source, version, pid_domain, peer_protocol from claude_sessions", { loaders: [sessionsLoader], exec: execFor(home), repo: fixtureRepo(), env: { HOME: home }, params: {} });
+    assert.deepEqual(claude.rows, [{ session_id: claudeId, kind: "interactive", entrypoint: "cli", status: "idle", status_updated_at: 2100, name_source: "user", version: "2.1.0", pid_domain: "host", peer_protocol: 1 }]);
+    const codex = await runSql("select session_id, source, thread_source, model, model_provider, reasoning_effort, cli_version, sandbox_policy, approval_mode, git_branch, git_origin_url, title, tokens_used, archived from codex_sessions", { loaders: [sessionsLoader], exec: execFor(home), repo: fixtureRepo(), env: { HOME: home }, params: {} });
+    assert.deepEqual(codex.rows, [{ session_id: codexId, source: "cli", thread_source: "interactive", model: "gpt-5", model_provider: "openai", reasoning_effort: "high", cli_version: "0.1.0", sandbox_policy: "workspace-write", approval_mode: "never", git_branch: "feature", git_origin_url: "https://example.test/repo.git", title: "Codex thread", tokens_used: 42, archived: 0 }]);
     assert.equal(result.providers[0]?.ok, 1);
   } finally {
     await rm(home, { recursive: true, force: true });
+  }
+});
+
+test("a Claude session needs its parent session", async () => {
+  const raw = new DatabaseSync(":memory:");
+  try {
+    migrate(raw, migrations);
+    const db = node(raw);
+    const result = await db.run(sessionCommands.loadClaude, { rows: [{ session_id: "absent" as ClaudeSessionsId, kind: null, entrypoint: null, status: null, status_updated_at: null, name_source: null, version: null, pid_domain: null, peer_protocol: null }] });
+    assert.equal(result.ok, false);
+  } finally {
+    raw.close();
   }
 });
 

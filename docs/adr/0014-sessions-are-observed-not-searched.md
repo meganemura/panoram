@@ -19,6 +19,7 @@ It joins an agent to a session through the session identifier that herdr reports
 The Claude Code and Codex sources load concurrently.
 If one source fails, the provider keeps rows from the other source and reports the failed source in its provider row.
 This partial result is useful because one table represents two independent tools.
+ADR 0024 records how the session tables preserve each source's field names.
 
 ## Consequences
 
