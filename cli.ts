@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The command line: panoram <query> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv]
-//                   panoram --sql <text> [--scope agents|all]
+//                   panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all]
 //                   panoram --help
 // The JSON envelope carries the rows and the `providers` rows, so a caller
 // sees which provider answered and when. TSV carries the rows only, and a
@@ -17,7 +17,7 @@ function usage(): string {
   const lines = Object.entries(catalog).map(([name, q]) => `  ${name.padEnd(width)}  ${q.description}${q.params.length ? `  (--${q.params.join(", --")})` : ""}`);
   return [
     "usage: panoram <query> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv]",
-    "       panoram --sql <text> [--scope agents|all] [--json|--tsv]",
+    "       panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all] [--json|--tsv]",
     "",
     "queries:",
     ...lines,
@@ -79,6 +79,9 @@ async function main(argv: string[]): Promise<number> {
   let result;
   if (values.sql !== undefined) {
     name = "sql";
+    // The two flags are the two parameters a statement can name. Any other
+    // `:name` is an error from the core.
+    if (/:root\b/.test(values.sql)) params["root"] = toplevel(values.root ?? process.cwd());
     result = await runSql(values.sql, { loaders, scope, params });
   } else {
     name = positionals[0]!;
@@ -99,4 +102,11 @@ async function main(argv: string[]): Promise<number> {
   return 0;
 }
 
-process.exitCode = await main(process.argv.slice(2));
+try {
+  process.exitCode = await main(process.argv.slice(2));
+} catch (e) {
+  // A statement that does not prepare, or a parameter with no flag. The
+  // message is the whole story; a stack would point into the core.
+  process.stderr.write(`panoram: ${e instanceof Error ? e.message : String(e)}\n`);
+  process.exitCode = 1;
+}
