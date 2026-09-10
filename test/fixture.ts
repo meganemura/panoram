@@ -201,7 +201,7 @@ export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr
     }
     if (command === "ghq" && invocation === "list -p") return `${paths.alpha}\n${paths.beta}\n${paths.gamma}\n`;
     if (command === "git" && invocation === "worktree list --porcelain") return worktreesFor(cwd);
-    if (command === "git" && invocation === "status --porcelain=2 --branch") return statusFor(cwd);
+    if (command === "git" && invocation === "--no-optional-locks status --porcelain=2 --branch") return statusFor(cwd);
     if (command === "mise" && invocation === "ls --json") return miseInventory();
     if (command === "mise" && args[0] === "ls" && args[1] === "--json" && args[2] === "--current" && args[3] === "-C" && args[4] !== undefined) {
       return miseCurrent(args[4]);

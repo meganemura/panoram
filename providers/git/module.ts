@@ -1,5 +1,5 @@
 // Provider: git. The loader runs `git worktree list --porcelain` and
-// `git status --porcelain=2 --branch` on each repository root in scope.
+// `git --no-optional-locks status --porcelain=2 --branch` on each repository root in scope.
 // Boundary: the two tables, their loading commands, and single-table
 // queries. Joins with other providers live in the report module.
 import { commands, queries, table } from "solarsql";

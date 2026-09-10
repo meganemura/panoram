@@ -91,7 +91,7 @@ function gitFixture(status: string, worktrees: string, roots: readonly string[])
     if (command === "herdr" && invocation === "api snapshot") return snapshotForRoots(roots);
     if (command === "ghq" && invocation === "list -p") return "";
     if (command === "git" && invocation === "worktree list --porcelain") return worktrees;
-    if (command === "git" && invocation === "status --porcelain=2 --branch") return status;
+    if (command === "git" && invocation === "--no-optional-locks status --porcelain=2 --branch") return status;
     throw new Error(`unexpected fake command: ${command} ${invocation} in ${cwd ?? ""}`);
   };
 }

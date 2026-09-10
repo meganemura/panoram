@@ -58,7 +58,7 @@ Under the default scope these hold the repositories that have an agent; under `-
 ## `pull_requests` (github)
 
 `id` (key, `owner/name#number`), `repo`, `root?`, `number`, `title`, `head_branch?`, `head_repo?`, `base_branch?`, `author?`, `is_draft`, `state`, `review_decision?`, `checks?`, `updated_at`, `url`.
-The open pull requests of every repository in scope. `head_repo` is the repository the head branch lives in; it differs from `repo` for a pull request from a fork, and the joins on the branch require the two to match. `updated_at` is milliseconds since the epoch.
+The open pull requests of every repository in scope. `checks` comes from the last commit's status check rollup state. `head_repo` is the repository the head branch lives in; it differs from `repo` for a pull request from a fork, and the joins on the branch require the two to match. `updated_at` is milliseconds since the epoch.
 
 ## `review_requests` (github_reviews)
 

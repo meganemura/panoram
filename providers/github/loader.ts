@@ -1,4 +1,7 @@
 // Fills pull requests from repository origins and the caller's review queue.
+// One GraphQL request replaces one process per repository. This saves time and
+// avoids the process burst that ADR 0022 describes. The 50-item cap remains;
+// the query reference explains its effect.
 // Origins identify a GitHub repository even when worktrees use different paths.
 // Boundary: this provider's table only.
 import type { LoadContext, Loader } from "../../core/loader.ts";
@@ -20,14 +23,11 @@ export function parseGithubOrigin(origin: string): string | null {
   return match ? `${match[1]}/${match[2]}` : null;
 }
 
-// gh mixes check runs and status contexts, so either field can carry a result.
-export function summarizeChecks(rollup: readonly ObjectValue[]): "pass" | "fail" | "pending" | "none" {
-  if (rollup.length === 0) return "none";
-  const failure = new Set(["FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE"]);
-  const pending = new Set(["IN_PROGRESS", "QUEUED", "PENDING", "WAITING", "REQUESTED", "EXPECTED"]);
-  const values = rollup.flatMap((item) => [item.conclusion, item.state, item.status]).filter((value): value is string => typeof value === "string");
-  if (values.some((value) => failure.has(value))) return "fail";
-  return values.some((value) => pending.has(value)) ? "pending" : "pass";
+export function checkState(state: unknown): "pass" | "fail" | "pending" | "none" {
+  if (state === "SUCCESS") return "pass";
+  if (state === "FAILURE" || state === "ERROR") return "fail";
+  if (state === "PENDING" || state === "EXPECTED") return "pending";
+  return "none";
 }
 
 function githubError(error: unknown): Error {
@@ -35,16 +35,37 @@ function githubError(error: unknown): Error {
   return new Error(message.split("\n")[0] || "gh failed");
 }
 
+export function buildPullRequestsQuery(repos: readonly string[]): string {
+  const selections = repos.map((repo, index) => {
+    const [owner, name] = repo.split("/");
+    return `r${index}: repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(name)}) { nameWithOwner pullRequests(states: OPEN, first: 50, orderBy: {field: UPDATED_AT, direction: DESC}) { nodes { number title headRefName headRepository { nameWithOwner } baseRefName author { login } isDraft state reviewDecision updatedAt url commits(last: 1) { nodes { commit { statusCheckRollup { state } } } } } } }`;
+  });
+  return `query { ${selections.join(" ")} }`;
+}
+
+function firstGithubError(errors: unknown): string | null {
+  if (!Array.isArray(errors)) return null;
+  for (const error of errors) {
+    const value = object(error);
+    if (value !== null && typeof value.message === "string") return value.message;
+  }
+  return null;
+}
+
 function asPullRequest(value: unknown, repo: string, root: string | null): PullRequest {
   const row = object(value);
   const author = row === null ? null : object(row.author);
-  const rollup = row === null || !Array.isArray(row.statusCheckRollup) ? null : row.statusCheckRollup.map(object);
+  const commits = row === null ? null : object(row.commits);
+  const nodes = commits === null || !Array.isArray(commits.nodes) ? null : commits.nodes;
+  const lastCommit = nodes?.[0] === undefined ? null : object(nodes[0]);
+  const commit = lastCommit === null ? null : object(lastCommit.commit);
+  const statusCheckRollup = commit === null ? null : object(commit.statusCheckRollup);
   // The head of a pull request from a fork is a branch of another repository;
   // a join on the branch name alone would pair it with a local checkout.
   const headRepository = row === null ? null : object(row.headRepository);
   const headRepo = headRepository !== null && typeof headRepository.nameWithOwner === "string" ? headRepository.nameWithOwner : null;
-  if (row === null || typeof row.number !== "number" || typeof row.title !== "string" || typeof row.state !== "string" || typeof row.updatedAt !== "string" || typeof row.url !== "string" || (row.headRefName !== null && row.headRefName !== undefined && typeof row.headRefName !== "string") || (row.baseRefName !== null && row.baseRefName !== undefined && typeof row.baseRefName !== "string") || (row.isDraft !== undefined && typeof row.isDraft !== "boolean") || (row.reviewDecision !== null && row.reviewDecision !== undefined && typeof row.reviewDecision !== "string") || (author !== null && typeof author.login !== "string") || rollup?.some((item) => item === null)) throw new Error("gh returned invalid JSON");
-  return { id: `${repo}#${row.number}` as PullRequestsId, repo, root, number: row.number, title: row.title, head_branch: row.headRefName ?? null, head_repo: headRepo, base_branch: row.baseRefName ?? null, author: author?.login as string | undefined ?? null, is_draft: row.isDraft ? 1 : 0, state: row.state, review_decision: row.reviewDecision ?? null, checks: summarizeChecks(rollup as ObjectValue[]), updated_at: Date.parse(row.updatedAt), url: row.url };
+  if (row === null || typeof row.number !== "number" || typeof row.title !== "string" || typeof row.state !== "string" || typeof row.updatedAt !== "string" || typeof row.url !== "string" || nodes === null || (row.headRefName !== null && row.headRefName !== undefined && typeof row.headRefName !== "string") || (row.baseRefName !== null && row.baseRefName !== undefined && typeof row.baseRefName !== "string") || (row.isDraft !== undefined && typeof row.isDraft !== "boolean") || (row.reviewDecision !== null && row.reviewDecision !== undefined && typeof row.reviewDecision !== "string") || (author !== null && typeof author.login !== "string") || (statusCheckRollup !== null && typeof statusCheckRollup.state !== "string")) throw new Error("gh returned invalid JSON");
+  return { id: `${repo}#${row.number}` as PullRequestsId, repo, root, number: row.number, title: row.title, head_branch: row.headRefName ?? null, head_repo: headRepo, base_branch: row.baseRefName ?? null, author: author?.login as string | undefined ?? null, is_draft: row.isDraft ? 1 : 0, state: row.state, review_decision: row.reviewDecision ?? null, checks: checkState(statusCheckRollup?.state), updated_at: Date.parse(row.updatedAt), url: row.url };
 }
 
 function asReviewRequest(value: unknown, roots: ReadonlyMap<string, string>): ReviewRequest {
@@ -84,7 +105,21 @@ export const githubLoader: Loader = {
     const repoRoots = await repoRootsOf(ctx);
     let rows: PullRequest[];
     try {
-      rows = (await Promise.all([...repoRoots].map(async ([repo, root]) => JSON.parse(await ctx.exec("gh", ["pr", "list", "--repo", repo, "--state", "open", "--limit", "50", "--json", "number,title,headRefName,headRepository,baseRefName,author,isDraft,state,reviewDecision,statusCheckRollup,updatedAt,url"])).map((value: unknown) => asPullRequest(value, repo, root)) as PullRequest[]))).flat();
+      const entries = [...repoRoots];
+      if (entries.length === 0) return;
+      const response = object(JSON.parse(await ctx.exec("gh", ["api", "graphql", "-f", `query=${buildPullRequestsQuery(entries.map(([repo]) => repo))}`])));
+      const data = response === null ? null : object(response.data);
+      const repositories = data === null ? [] : entries.map((_, index) => data[`r${index}`]).filter((repository) => repository !== null && repository !== undefined);
+      const error = response === null ? null : firstGithubError(response.errors);
+      if (data === null || (error !== null && repositories.length === 0)) throw new Error(error ?? "gh returned invalid JSON");
+      rows = entries.flatMap(([repo, root], index) => {
+        const repository = data[`r${index}`];
+        const pullRequests = object(repository)?.pullRequests;
+        const nodes = object(pullRequests)?.nodes;
+        if (repository === null || repository === undefined) return [];
+        if (!Array.isArray(nodes)) throw new Error("gh returned invalid JSON");
+        return nodes.map((value) => asPullRequest(value, repo, root));
+      });
     } catch (error) { throw githubError(error); }
     const loaded = await ctx.db.run(githubCommands.loadPullRequests, { rows });
     if (!loaded.ok) throw new Error(`pull_requests: ${loaded.kind}`);

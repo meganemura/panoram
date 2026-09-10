@@ -14,15 +14,15 @@ The GitHub key is the origin repository, not the ghq path.
 
 ## Decision
 
-The github provider owns two tables with a loader each: `pull_requests`, one `gh pr list` per distinct repository in scope, and `review_requests`, one `gh search prs` for the caller's requested reviews.
+The github provider owns two tables with a loader each: `pull_requests`, one GraphQL request with one alias per distinct repository in scope, and `review_requests`, one `gh search prs` for the caller's requested reviews.
 Each loader reads the origin of every root in scope from its Git config file; a root whose origin is not on GitHub has no rows.
 A pull request keeps the repository its head branch lives in, so a join on the branch name pairs an agent only with a pull request from the same repository, not with one from a fork.
 It summarizes checks as `pass`, `fail`, `pending`, or `none`.
 
 ## Consequences
 
-A query that reads `pull_requests` takes 3 to 9 seconds under the default scope on 2026-09-10; the same 17 `gh pr list` calls take 2.5 to 3 seconds in a script that runs nothing else.
-The difference follows the git processes a call runs before gh, as `ghq list` does in ADR 0008; the cause is not identified.
+A query that reads `pull_requests` takes 2.2 to 2.8 seconds for 18 repositories on 2026-09-11. It starts one process instead of one process per repository.
+This also avoids a burst before loaders that follow, as ADR 0022 requires.
 A query that reads `review_requests` pays the search alone, 2 to 5 seconds.
 `--scope all` lists 66 repositories and the skill discourages it for these queries.
 There is no rate limit handling in this version.

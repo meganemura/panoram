@@ -22,4 +22,4 @@ A checkout that ghq creates has the same path string as its Git root.
 
 An agent outside a repository keeps a null `root` and remains in `agents`.
 Queries can therefore report agents outside repositories.
-The git loader runs git itself. A separate git reader was considered and not adopted, because the two git calls a root needs are the whole of the loader.
+The git loader runs git itself. It uses `--no-optional-locks` for status so Git does not refresh the index by writing it. A separate git reader was considered and not adopted, because the two git calls a root needs are the whole of the loader.

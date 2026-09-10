@@ -79,7 +79,7 @@ A session joins an agent through the session id herdr's integration reports; a s
 | `failing-checks-with-agents` | | `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url`, `agents` |
 | `review-requests-with-agents` | | `repo`, `number`, `title`, `author?`, `updated_at`, `url`, `agents` |
 
-`repo` is the `owner/name` parsed from origin. The list holds at most 50 open pull requests per repository, the newest first; a repository with more can answer "no pull request" for an older branch. `checks` is `pass`, `fail`, `pending`, or `none`. `prs-with-agents` and `failing-checks-with-agents` match an agent's branch to a pull request whose head lives in the same repository, so a pull request from a fork does not pair with a local branch of the same name. `agents` excludes `me`. The pull request queries take 3 to 9 seconds under the default scope; `review-requests` 2 to 5.
+`repo` is the `owner/name` parsed from origin. The list holds at most 50 open pull requests per repository, the newest first; a repository with more can answer "no pull request" for an older branch. `checks` comes from the last commit's status check rollup state: `SUCCESS` is `pass`; `FAILURE` and `ERROR` are `fail`; `PENDING` and `EXPECTED` are `pending`; a null rollup or no commit is `none`. `prs-with-agents` and `failing-checks-with-agents` match an agent's branch to a pull request whose head lives in the same repository, so a pull request from a fork does not pair with a local branch of the same name. `agents` excludes `me`. The pull request query takes 2.2 to 2.8 seconds for 18 repositories; `review-requests` takes 2 to 5 seconds.
 
 ## Processes (ps, lsof)
 
