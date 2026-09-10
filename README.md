@@ -1,5 +1,7 @@
 # ⛰️ panoram
 
+[日本語](README.ja.md)
+
 panoram answers questions about one developer's machine: which coding agents run where and what they do, which repositories are dirty, which worktrees have nobody in them, which sessions sit idle, which tool versions a repository activates.
 It is a query layer with no data of its own.
 Each call observes the providers at that moment, joins them in an in-memory SQLite database, and prints rows.
