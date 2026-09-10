@@ -22,4 +22,4 @@ Solarsql permits a module to write only its own tables.
 
 The core knows a loader by `name`, `tables`, `after`, `load(ctx)`, and optional `self(ctx)`.
 It imports each module's `public.ts` from the module list in `panoram.config.ts`.
-The configuration avoids module imports because the build loads it before generated files exist.
+Solarsql 0.2.0 writes stubs first, so the configuration imports the loaders and is the one list of providers.

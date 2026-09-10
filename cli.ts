@@ -9,8 +9,8 @@
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { catalog } from "./catalog.ts";
-import { loadLoaders } from "./core/registry.ts";
 import { runQuery, runSql, type ProviderRow } from "./core/run.ts";
+import { loaders } from "./panoram.config.ts";
 
 function usage(): string {
   const width = Math.max(...Object.keys(catalog).map((k) => k.length));
@@ -71,7 +71,6 @@ async function main(argv: string[]): Promise<number> {
     return 2;
   }
   const scope = values.scope;
-  const loaders = await loadLoaders();
   const params: Record<string, unknown> = {};
   if (values.me !== undefined) params["me"] = values.me === "" ? null : values.me;
 

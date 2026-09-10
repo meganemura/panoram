@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { catalog } from "../catalog.ts";
-import { loadLoaders } from "../core/registry.ts";
 import { runQuery } from "../core/run.ts";
+import { loaders } from "../panoram.config.ts";
 import { fakeExec } from "./fixture.ts";
 
 function providerFacts(rows: { name: string; ok: number; error: string | null }[]): { name: string; ok: number; error: string | null }[] {
@@ -13,7 +13,7 @@ function providerFacts(rows: { name: string; ok: number; error: string | null }[
 
 test("a failed herdr still lets dependent providers record their result", async () => {
   const result = await runQuery(catalog["agents-in-dirty-repos"]!.query, {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec({ failHerdr: true }),
     env: {},
     scope: "agents",
@@ -30,7 +30,7 @@ test("a failed herdr still lets dependent providers record their result", async 
 
 test("agents records only the failed herdr provider", async () => {
   const result = await runQuery(catalog.agents!.query, {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec({ failHerdr: true }),
     env: {},
     scope: "agents",

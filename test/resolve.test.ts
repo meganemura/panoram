@@ -105,6 +105,17 @@ test("tablesRead finds every catalog query's declared tables", () => {
   }
 });
 
+test("catalog query metadata matches the authorizer probe", () => {
+  const raw = migratedDatabase();
+  try {
+    for (const [name, named] of Object.entries(catalog)) {
+      assert.deepEqual(new Set(named.query.meta.reads), new Set(tablesRead(raw, named.query.sql)), name);
+    }
+  } finally {
+    raw.close();
+  }
+});
+
 test("loadersFor includes dependencies in configuration order", () => {
   const loaders: Loader[] = [
     { name: "repos", tables: ["repos"], after: [], async load() {} },

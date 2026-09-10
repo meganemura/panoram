@@ -4,13 +4,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { catalog } from "../catalog.ts";
 import type { Scope } from "../core/loader.ts";
-import { loadLoaders } from "../core/registry.ts";
 import { runQuery } from "../core/run.ts";
+import { loaders } from "../panoram.config.ts";
 import { fakeExec, paneIds, paths } from "./fixture.ts";
 
 async function query(name: keyof typeof catalog, scope: Scope = "agents", params: Record<string, unknown> = {}) {
   return runQuery(catalog[name]!.query, {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec(),
     env: {},
     scope,

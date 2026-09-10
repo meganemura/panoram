@@ -1,8 +1,7 @@
-// Which providers a statement needs. The engine tells: an authorizer set
-// while the statement is prepared reports every table it reads, on the
-// empty database, before any loader ran. This is the same probe solarsql's
-// build uses for its boundary check, and it costs microseconds. It works for
-// a named query and for ad hoc SQL alike, so both load the same way.
+// The ad hoc SQL path needs a table list. A named query carries its list in
+// generated metadata. The engine authorizer reports every table ad hoc SQL
+// reads while it prepares on the empty database, before any loader runs.
+// solarsql uses the same probe for its boundary check, and it costs microseconds.
 // Boundary: reading the statement only. run.ts orders and runs the loaders.
 import { constants, type DatabaseSync } from "node:sqlite";
 import type { Loader } from "./loader.ts";

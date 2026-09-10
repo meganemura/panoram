@@ -6,8 +6,8 @@ import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import { catalog } from "../catalog.ts";
 import type { Exec } from "../core/loader.ts";
-import { loadLoaders } from "../core/registry.ts";
 import { runQuery } from "../core/run.ts";
+import { loaders } from "../panoram.config.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { drawSnapshotAgents, generatedAgentCwds, generatedSnapshot, fakeExec, fixtureAgents, paneIds, sessionIds } from "./fixture.ts";
 
@@ -18,7 +18,7 @@ const generatedRoots = new Map<string, string>([
 
 async function agents(options: { env: Readonly<Record<string, string | undefined>>; params?: Record<string, unknown>; noFocusedAgent?: boolean }) {
   return runQuery(catalog.agents!.query, {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec({ agents: options.noFocusedAgent ? fixtureAgents({ focusedPaneId: null }) : fixtureAgents() }),
     env: options.env,
     scope: "agents",

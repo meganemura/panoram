@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
-import { loadLoaders } from "../core/registry.ts";
 import { runSql } from "../core/run.ts";
+import { loaders } from "../panoram.config.ts";
 import { fakeExec, paths } from "./fixture.ts";
 
 function providerNames(result: { providers: { name: string }[] }): string[] {
@@ -31,7 +31,7 @@ function parameterStatement(names: readonly string[]): string {
 
 test("SQL that reads agents runs herdr only", async () => {
   const result = await runSql("select root from agents order by root", {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec(),
     env: {},
     scope: "agents",
@@ -48,7 +48,7 @@ test("SQL that reads agents runs herdr only", async () => {
 
 test("SQL without tables runs no loader", async () => {
   const result = await runSql("select 1 as x", {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec(),
     env: {},
     scope: "agents",
@@ -60,7 +60,7 @@ test("SQL without tables runs no loader", async () => {
 
 test("SQL binds named parameters from the caller", async () => {
   const result = await runSql("select :root as root", {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec(),
     env: {},
     scope: "agents",
@@ -72,7 +72,7 @@ test("SQL binds named parameters from the caller", async () => {
 
 test("SQL that reads providers does not request a loader", async () => {
   const result = await runSql("select name from providers order by name", {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec(),
     env: {},
     scope: "agents",

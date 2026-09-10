@@ -5,8 +5,8 @@ import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import type { Exec, Loader } from "../core/loader.ts";
-import { loadLoaders } from "../core/registry.ts";
 import { runSql } from "../core/run.ts";
+import { loaders } from "../panoram.config.ts";
 import { gitLoader } from "../providers/git/loader.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
@@ -110,7 +110,7 @@ test("git status preserves branch divergence and dirty counts", async () => {
   const alpha = await runSql(
     "select branch, upstream, ahead, behind, dirty_count, untracked_count from git_status where root = :root",
     {
-      loaders: await loadLoaders(),
+      loaders,
       exec: fakeExec(),
       env: {},
       scope: "all",
@@ -122,7 +122,7 @@ test("git status preserves branch divergence and dirty counts", async () => {
   ]);
 
   const gamma = await runSql("select upstream from git_status where root = :root", {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec(),
     env: {},
     scope: "all",
@@ -133,7 +133,7 @@ test("git status preserves branch divergence and dirty counts", async () => {
 
 test("a linked worktree root does not duplicate worktree rows", async () => {
   const result = await runSql("select path, repo_root, branch, head from worktrees order by path", {
-    loaders: await loadLoaders(),
+    loaders,
     exec: fakeExec({ agents: fixtureAgentsWithLinkedWorktree() }),
     env: {},
     scope: "agents",

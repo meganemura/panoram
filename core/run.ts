@@ -43,25 +43,25 @@ export type RunResult<R> = {
 
 // A named query from a catalog.
 export async function runQuery<Q extends Query<string, Entry>>(query: Q, options: RunOptions): Promise<RunResult<Record<string, unknown>>> {
-  return run(query.sql, [...query.meta.params], (db, params) => db.all(query, params as never), options);
+  return run(query.meta.reads, [...query.meta.params], (db, params) => db.all(query, params as never), options);
 }
 
 // Ad hoc SQL. Parameters bind by the names the statement uses.
 export async function runSql(sql: string, options: RunOptions): Promise<RunResult<Record<string, unknown>>> {
   const names = [...new Set([...sql.matchAll(/:([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((m) => m[1]!))];
-  return run(sql, names, (_db, params, raw) => {
+  return run((raw) => tablesRead(raw, sql), names, (_db, params, raw) => {
     const statement = raw.prepare(sql);
     const bound = Object.fromEntries(names.map((n) => [n, params[n] ?? null]));
     return Promise.resolve(statement.all(bound as Record<string, never>).map((r) => ({ ...r })) as Record<string, unknown>[]);
   }, options);
 }
 
-async function run<R>(sql: string, paramNames: readonly string[], read: (db: Database, params: Record<string, unknown>, raw: DatabaseSync) => Promise<R[]>, options: RunOptions): Promise<RunResult<R>> {
+async function run<R>(tables: readonly string[] | ((raw: DatabaseSync) => readonly string[]), paramNames: readonly string[], read: (db: Database, params: Record<string, unknown>, raw: DatabaseSync) => Promise<R[]>, options: RunOptions): Promise<RunResult<R>> {
   const raw = new DatabaseSync(":memory:");
   migrate(raw, migrations);
   const db = node(raw);
   const ctx = { db, exec: options.exec ?? exec, scope: options.scope ?? "agents", env: options.env ?? process.env };
-  const needed = loadersFor(options.loaders, tablesRead(raw, sql));
+  const needed = loadersFor(options.loaders, typeof tables === "function" ? tables(raw) : tables);
   const providers: ProviderRow[] = [];
   // Loaders run in dependency order, one at a time. A failed loader leaves
   // its tables empty; a loader that runs after it sees the empty tables and
