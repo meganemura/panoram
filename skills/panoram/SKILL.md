@@ -38,53 +38,34 @@ Every query, its parameters, and its columns: [references/queries.md](references
 
 ## Queries
 
+The table lists the queries the workflow names. Every query, with its parameters and columns, is in [references/queries.md](references/queries.md); `--help` lists them all, most used first.
+
 | Query | Parameter | Answers |
 | --- | --- | --- |
-| `agents` | | Every agent herdr hosts, with its repository root. |
 | `in-dir` | `--root` | The agents in one repository. |
-| `working` | | The agents that work right now. |
-| `workspaces` | | Which workspace holds agents of which repository. |
-| `agents-with-sessions` | | Agents with the name, start time, and last activity of their session. |
-| `sessions` | | Every Claude Code and Codex session alive now. |
-| `idle-sessions` | | Sessions ordered by how long they have been idle. |
-| `sessions-without-pane` | | Sessions alive now that herdr does not show as an agent. |
-| `pull-requests` | `--root` | Open pull requests of one repository. |
-| `review-requests` | | Open pull requests that request the user's review. |
-| `dirty` | | Repositories with uncommitted changes, dirtiest first. |
-| `worktrees` | `--root` | The worktrees of one repository. |
-| `repos` | | Every repository ghq manages. |
-| `agents-in-dirty-repos` | | Agents that work in a repository with uncommitted changes. |
 | `crowded-repos` | | Repositories with more than one agent, and their dirt. |
-| `idle-worktrees` | | Linked worktrees with no agent in them. |
-| `agents-outside-ghq` | | Agents whose repository ghq does not manage, or no repository at all. |
-| `dirty-unattended` | | Repositories with uncommitted changes and no agent. |
+| `dirty` | | Repositories with uncommitted changes, dirtiest first. |
 | `behind-upstream-with-agents` | | Repositories behind their upstream that have an agent in them. |
-| `tools` | | Every tool version mise has installed. |
+| `agents-with-sessions` | | Agents with the name, start time, and last activity of their session. |
+| `working` | | The agents that work right now. |
+| `idle-sessions` | | Sessions ordered by how long they have been idle. |
+| `workspaces` | | Which workspace holds agents of which repository. |
+| `idle-worktrees` | | Linked worktrees with no agent in them. |
+| `dirty-unattended` | | Repositories with uncommitted changes and no agent. |
 | `tools-in-dir` | `--root` | The tools mise activates in one repository. |
 | `missing-tools-with-agents` | | Repositories with an agent where a requested tool is not installed. |
 | `tool-versions-split` | | Tools whose active version differs between repositories with an agent. |
 | `prs-with-agents` | | Agents whose branch has an open pull request, with its checks. |
 | `failing-checks-with-agents` | | Open pull requests with failing checks in repositories where an agent works. |
-| `review-requests-with-agents` | | Requested reviews, with the number of agents in that repository. |
 | `processes-in-dir` | `--root` | Processes whose working directory is inside one repository. |
-| `listening-ports` | | Every listening TCP port of the user, with the repository its process sits in. |
 | `ports-in-dir` | `--root` | Listening ports of processes inside one repository. |
 | `servers-with-agents` | | Listening processes in repositories where an agent works. |
-| `long-running-without-agents` | | Processes older than an hour in repositories with no agent. |
-| `skills` | | Every skill Claude Code and Codex can load, with its source. |
 | `skills-in-dir` | `--root` | The skills an agent can use in one repository. |
-| `plugins` | | Every installed plugin, with its version. |
 | `duplicate-skill-names` | | Skill names that come from more than one source. |
-| `skills-in-one-agent` | | Skills that exist for Claude Code or Codex but not both. |
-| `project-skills-with-agents` | | Project skills in repositories where an agent works. |
 | `issues` | `--root` | Open beads issues of one repository. |
-| `issues-with-agents` | | Repositories with an agent and their open beads issues. |
-| `issues-unattended` | | Repositories with open beads issues and no agent. |
 | `workflow` | `--root` | The headsign run of one repository. |
-| `workflows` | | Every headsign run, with its phase. |
-| `running-workflows-with-agents` | | Running headsign workflows in repositories where an agent works. |
 | `running-workflows-unattended` | | Running headsign workflows with no agent in the repository. |
-| `stopped-workflows` | | Headsign runs that stopped or recorded a failure. |
+| `issues-unattended` | | Repositories with open beads issues and no agent. |
 
 `--root` defaults to the git toplevel of the current directory.
 `--scope all` runs git and mise on every ghq repository instead of the repositories with an agent; it takes a few seconds.

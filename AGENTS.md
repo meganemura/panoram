@@ -29,4 +29,4 @@ If you want to cite an internal document, write its substance in place instead.
 - The npm package `panoram` is reserved. The owner runs `npm publish`; do not publish without the owner's explicit approval. The steps are in `docs/releasing.md`.
 - panoram reads. It never writes to a provider. Actions stay with the tools that own the state.
 - The database is new on every call, so there is one migration. On a schema change, delete `migrations/`, run `npx solarsql build panoram.config.ts`, then `npx solarsql migration initial panoram.config.ts`, and commit what they wrote.
-- panoram holds no cache. A provider that does not answer gives an empty table and a row in `providers` that says so.
+- panoram holds no cache. The call log under the state directory is the one file panoram writes; it holds query names and times only. A provider that does not answer gives an empty table and a row in `providers` that says so.

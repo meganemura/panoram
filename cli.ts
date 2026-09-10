@@ -10,16 +10,22 @@ import { execFileSync } from "node:child_process";
 import { dirname } from "node:path";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { catalog } from "./catalog.ts";
+import { callCounts, callsPath, recordCall } from "./core/calls.ts";
 import { runQuery, runSql, type ProviderRow, type RunResult } from "./core/run.ts";
 import { loadUserQueries, type UserQuery } from "./core/user-queries.ts";
 import { loaders } from "./panoram.config.ts";
 
 const commandOptions = new Set(["root", "scope", "me", "sql", "json", "tsv", "help"]);
 
-function usage(userQueries: readonly UserQuery[]): string {
+function usage(userQueries: readonly UserQuery[], env: Readonly<Record<string, string | undefined>>): string {
   const width = Math.max(...[...Object.keys(catalog), ...userQueries.map((query) => query.name)].map((name) => name.length));
-  const lines = Object.entries(catalog).map(([name, query]) => queryLine(name, query.description, query.params, width));
-  const userLines = userQueries.map((query) => queryLine(query.name, query.description, query.params, width));
+  const counts = callCounts(env);
+  const byUse = <T extends { name: string }>(queries: readonly T[]): T[] => queries
+    .map((query, index) => ({ query, index }))
+    .sort((a, b) => (counts.get(b.query.name) ?? 0) - (counts.get(a.query.name) ?? 0) || a.index - b.index)
+    .map(({ query }) => query);
+  const lines = byUse(Object.entries(catalog).map(([name, query]) => ({ name, ...query }))).map((query) => queryLine(query.name, query.description, query.params, width));
+  const userLines = byUse(userQueries).map((query) => queryLine(query.name, query.description, query.params, width));
   return [
     "usage: panoram <query> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv]",
     "       panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all] [--json|--tsv]",
@@ -31,6 +37,7 @@ function usage(userQueries: readonly UserQuery[]): string {
     "--scope agents (default) runs git on the repositories that have an agent; all runs it on every ghq repository.",
     "--root defaults to the git toplevel of the current directory.",
     "--me excludes one pane; by default the caller's own pane, found from the environment.",
+    `queries are listed by how often you called them (the count is in ${callsPath(env)})`,
   ].join("\n");
 }
 
@@ -111,7 +118,7 @@ async function main(argv: string[]): Promise<number> {
     : undefined;
   validateUserOptions(values, userQueries, userQuery?.params ?? [], requestedName ?? "sql");
   if (help || (positionals.length === 0 && sql === undefined)) {
-    console.log(usage(userQueries));
+    console.log(usage(userQueries, process.env));
     return help ? 0 : 2;
   }
   if (scope !== "agents" && scope !== "all") {
@@ -134,7 +141,7 @@ async function main(argv: string[]): Promise<number> {
     name = requestedName!;
     const named = catalog[name];
     if (!named && !userQuery) {
-      console.error(`panoram: no query named ${name}\n\n${usage(userQueries)}`);
+      console.error(`panoram: no query named ${name}\n\n${usage(userQueries, process.env)}`);
       return 2;
     }
     if (userQuery) {
@@ -152,6 +159,7 @@ async function main(argv: string[]): Promise<number> {
       throw new Error(`no query named ${name}`);
     }
   }
+  recordCall(process.env, name);
   if (values["tsv"] === true) {
     process.stdout.write(tsv(result.rows));
     warn(result.providers);

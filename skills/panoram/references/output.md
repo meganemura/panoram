@@ -45,7 +45,9 @@ Times are milliseconds since the epoch (`observed_at`, `started_at`, `updated_at
 | `--tsv` | Rows only, tab separated. |
 | `--json` | The default. |
 | `--<name> VALUE` | A parameter of a user query, bound as text. |
-| `--help` | The list of queries, built-in and user, with descriptions. |
+| `--help` | The built-in and user queries, with descriptions, ordered by call count. |
+
+panoram records call counts in `$XDG_STATE_HOME/panoram/calls.jsonl`, or `~/.local/state/panoram/calls.jsonl` when the variable is unset.
 
 ## Exit codes
 
