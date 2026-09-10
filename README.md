@@ -23,10 +23,11 @@ A provider that is missing gives an empty table and a `providers` row that says 
 
 ```sh
 npm install
-node cli.ts --help
+npm link
+panoram --help
 ```
 
-The package exposes `cli.ts` as the `panoram` bin.
+`npm link` puts the `panoram` command on the PATH of the current Node; without it, `node cli.ts <query>` from the checkout does the same.
 
 ## Read next
 
