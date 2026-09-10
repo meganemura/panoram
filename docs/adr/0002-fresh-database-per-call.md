@@ -8,7 +8,7 @@ Status: accepted
 
 panoram has no data of its own; the providers own the state.
 A stored copy would need a freshness policy and an invalidation path for every provider.
-The loaders take 0.3 to 2 s for a call, so a copy would save little.
+No provider tells panoram when its state changed, so a copy has no moment at which to refresh.
 
 ## Decision
 
