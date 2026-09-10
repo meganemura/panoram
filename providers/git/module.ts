@@ -32,6 +32,10 @@ export const gitQueries = queries(generated, {
   dirty: `
     select root, branch, dirty_count, untracked_count
     from git_status where dirty_count > 0 order by dirty_count desc, root`,
+  // The checkout state of one repository.
+  status: `
+    select root, branch, upstream, ahead, behind, dirty_count, untracked_count
+    from git_status where root = :root`,
   // The worktrees of one repository, by its main root.
   worktreesOf: `
     select path, branch, head from worktrees where repo_root = :root order by path`,

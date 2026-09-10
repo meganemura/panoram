@@ -15,6 +15,7 @@ import { beadsQueries } from "./providers/beads/public.ts";
 import { headsignQueries } from "./providers/headsign/public.ts";
 
 export type Named = { query: Query<string, Entry>; description: string; params: readonly string[] };
+export type Report = { description: string; sections: readonly (readonly [string, keyof typeof catalog])[] };
 
 export const catalog: Readonly<Record<string, Named>> = {
   "agents": { query: herdrQueries.all, description: "Every agent herdr hosts, with its repository root.", params: [] },
@@ -23,6 +24,7 @@ export const catalog: Readonly<Record<string, Named>> = {
   "working": { query: herdrQueries.working, description: "The agents that work right now.", params: [] },
   "workspaces": { query: herdrQueries.workspaces, description: "Which workspace holds agents of which repository.", params: [] },
   "dirty": { query: gitQueries.dirty, description: "Repositories with uncommitted changes, dirtiest first.", params: [] },
+  "git-status": { query: gitQueries.status, description: "The branch, dirt, and distance from upstream of one repository.", params: ["root"] },
   "worktrees": { query: gitQueries.worktreesOf, description: "The worktrees of one repository, by its root.", params: ["root"] },
   "repos": { query: repoQueries.all, description: "Every repository ghq manages.", params: [] },
   "tools": { query: miseQueries.installed, description: "Every tool version mise has installed.", params: [] },
@@ -32,6 +34,7 @@ export const catalog: Readonly<Record<string, Named>> = {
   "claude-sessions": { query: sessionQueries.claude, description: "Claude Code sessions alive now, with kind, status, and version.", params: [] },
   "codex-sessions": { query: sessionQueries.codex, description: "Codex threads alive now, with model, effort, and source.", params: [] },
   "pull-requests": { query: githubQueries.open, description: "Open pull requests of one repository.", params: ["root"] },
+  "branch-pull-requests": { query: reportQueries.branchPullRequests, description: "Open pull requests for the branch one repository is on, with checks.", params: ["root"] },
   "review-requests": { query: githubQueries.reviewRequests, description: "Open pull requests that request the user's review.", params: [] },
   "processes-in-dir": { query: processQueries.inDir, description: "Processes whose working directory is inside one repository.", params: ["root"] },
   "listening-ports": { query: processQueries.listening, description: "Every listening TCP port of the user, with the repository its process sits in.", params: [] },
@@ -67,3 +70,24 @@ export const catalog: Readonly<Record<string, Named>> = {
   "skills-in-one-agent": { query: reportQueries.skillsInOneAgent, description: "Skills that exist for Claude Code or Codex but not both.", params: [] },
   "project-skills-with-agents": { query: reportQueries.projectSkillsWithAgents, description: "Project skills in repositories where an agent works.", params: [] },
 };
+
+export const reports = {
+  here: {
+    description: "Everything about the repository you sit in: who else is here, the checkout, its pull request, ports, tools, issues, the workflow.",
+    sections: [
+      ["agents", "in-dir"],
+      ["git", "git-status"],
+      ["worktrees", "worktrees"],
+      ["pull_requests", "branch-pull-requests"],
+      ["ports", "ports-in-dir"],
+      ["processes", "processes-in-dir"],
+      ["tools", "tools-in-dir"],
+      ["issues", "issues"],
+      ["workflow", "workflow"],
+    ],
+  },
+} as const satisfies Readonly<Record<string, Report>>;
+
+export function reportParams(report: Report): string[] {
+  return [...new Set(report.sections.flatMap(([, query]) => catalog[query]!.params))];
+}

@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { catalog } from "../catalog.ts";
-import type { Loader, Scope } from "../core/loader.ts";
+import type { Exec, Loader, Scope } from "../core/loader.ts";
 import { runQuery } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
 import { sessionCommands } from "../providers/sessions/module.ts";
@@ -35,15 +35,48 @@ const sessionFixtureLoader: Loader = {
 
 const fixtureLoaders = loaders.map((loader) => loader.name === "sessions" ? sessionFixtureLoader : loader);
 
-async function query(name: keyof typeof catalog, scope: Scope = "agents", params: Record<string, unknown> = {}) {
+async function query(name: keyof typeof catalog, scope: Scope = "agents", params: Record<string, unknown> = {}, exec: Exec = fakeExec()) {
   return runQuery(catalog[name]!.query, {
     loaders: fixtureLoaders,
-    exec: fakeExec(),
+    exec,
     repo: fixtureRepo,
     env: {},
     scope,
     params,
   });
+}
+
+function githubExec(fork = false): Exec {
+  const base = fakeExec();
+  return async (command, args, cwd, options) => {
+    if (command === "gh" && args[0] === "api" && args[1] === "graphql") {
+      const aliases = [...(args[3] ?? "").matchAll(/r(\d+): repository\(owner: "([^"]+)", name: "([^"]+)"\)/g)];
+      const data = Object.fromEntries(aliases.map(([, index, owner, name]) => {
+        const repo = `${owner}/${name}`;
+        const number = repo === "example/alpha" ? 7 : 8;
+        return [`r${index}`, {
+          pullRequests: {
+            nodes: [{
+              number,
+              title: repo === "example/alpha" ? "Alpha" : "Beta",
+              headRefName: "main",
+              headRepository: { nameWithOwner: fork ? "example/fork" : repo },
+              baseRefName: "trunk",
+              author: { login: "octo" },
+              isDraft: false,
+              state: "OPEN",
+              reviewDecision: "APPROVED",
+              updatedAt: "2026-09-10T00:00:00Z",
+              url: `https://example.test/${repo}/${number}`,
+              commits: { nodes: [{ commit: { statusCheckRollup: { state: "SUCCESS" } } }] },
+            }],
+          },
+        }];
+      }));
+      return JSON.stringify({ data });
+    }
+    return base(command, args, cwd, options);
+  };
 }
 
 test("agent catalog queries use repository roots and exclude the focused caller", async () => {
@@ -172,6 +205,9 @@ test("repository catalog queries preserve their ordered rows", async () => {
     { path: paths.alpha, branch: "main", head: "abc" },
     { path: paths.alphaWorktree, branch: "feature", head: "def" },
   ]);
+  assert.deepEqual((await query("git-status", "agents", { root: paths.gamma })).rows, [
+    { root: paths.gamma, branch: "gamma", upstream: null, ahead: 0, behind: 0, dirty_count: 1, untracked_count: 0 },
+  ]);
   assert.deepEqual((await query("repos")).rows, [
     { path: paths.alpha, host: "github.com", owner: "o", name: "alpha" },
     { path: paths.beta, host: "github.com", owner: "o", name: "beta" },
@@ -236,4 +272,58 @@ test("report catalog queries join the fixture tables", async () => {
   ]);
   const split = await query("tool-versions-split");
   assert.deepEqual(split.rows, []);
+  assert.deepEqual((await query("agents-with-sessions")).rows, [
+    {
+      pane_id: paneIds.alphaWorking,
+      agent: "claude",
+      agent_status: "working",
+      name: "session needle",
+      claude_status: null,
+      kind: null,
+      model: null,
+      source: null,
+      started_at: null,
+      updated_at: null,
+      last_turn_at: null,
+      last_branch: null,
+      root: paths.alpha,
+      idle_minutes: null,
+    },
+    {
+      pane_id: paneIds.alphaIdle,
+      agent: "claude",
+      agent_status: "idle",
+      name: null,
+      claude_status: null,
+      kind: null,
+      model: null,
+      source: null,
+      started_at: null,
+      updated_at: null,
+      last_turn_at: null,
+      last_branch: null,
+      root: paths.alpha,
+      idle_minutes: null,
+    },
+    {
+      pane_id: paneIds.scratchIdle,
+      agent: "claude",
+      agent_status: "idle",
+      name: null,
+      claude_status: null,
+      kind: null,
+      model: null,
+      source: null,
+      started_at: null,
+      updated_at: null,
+      last_turn_at: null,
+      last_branch: null,
+      root: null,
+      idle_minutes: null,
+    },
+  ]);
+  assert.deepEqual((await query("branch-pull-requests", "agents", { root: paths.alpha }, githubExec())).rows, [
+    { repo: "example/alpha", number: 7, title: "Alpha", head_branch: "main", checks: "pass", review_decision: "APPROVED", is_draft: 0, url: "https://example.test/example/alpha/7" },
+  ]);
+  assert.deepEqual((await query("branch-pull-requests", "agents", { root: paths.alpha }, githubExec(true))).rows, []);
 });

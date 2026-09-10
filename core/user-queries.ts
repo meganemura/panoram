@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync, type Dirent } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { catalog } from "../catalog.ts";
+import { catalog, reports } from "../catalog.ts";
 import { sqlParameterNames } from "./run.ts";
 
 export type UserQuery = {
@@ -44,6 +44,10 @@ export function loadUserQueries(env: Readonly<Record<string, string | undefined>
     }
     if (Object.hasOwn(catalog, name)) {
       warn(`${path} shadows the built-in query ${name}; the built-in wins`);
+      continue;
+    }
+    if (Object.hasOwn(reports, name)) {
+      warn(`${path} shadows the built-in report ${name}; the report wins`);
       continue;
     }
 

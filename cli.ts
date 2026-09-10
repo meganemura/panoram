@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The command line: panoram <query> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]
+// The command line: panoram <query|report> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]
 //                   panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all] [--expect-empty] [--strict]
 //                   panoram --help
 // The JSON envelope carries the rows and the `providers` rows, so a caller
@@ -10,15 +10,16 @@ import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
-import { catalog } from "./catalog.ts";
+import { catalog, reportParams, reports } from "./catalog.ts";
 import { callCounts, callsPath, recordCall } from "./core/calls.ts";
-import { runQuery, runSql, type ProviderRow, type RunResult } from "./core/run.ts";
+import { runQuery, runReport, runSql, type ProviderRow, type ReportResult, type RunResult } from "./core/run.ts";
 import { loadUserQueries, type UserQuery } from "./core/user-queries.ts";
 import { loaders } from "./panoram.config.ts";
 
 const commandOptions = new Set(["root", "scope", "me", "sql", "json", "tsv", "help", "expect-empty", "strict"]);
 
 type HelpQuery = { name: string; description: string; params: readonly string[]; source: "built-in" | "user" };
+type HelpReport = { name: string; description: string; params: readonly string[]; sections: readonly (readonly [string, string])[]; source: "report" };
 
 function queriesForHelp(userQueries: readonly UserQuery[], env: Readonly<Record<string, string | undefined>>): HelpQuery[] {
   const counts = callCounts(env);
@@ -31,20 +32,35 @@ function queriesForHelp(userQueries: readonly UserQuery[], env: Readonly<Record<
   return [...byUse(builtIn), ...byUse(user)];
 }
 
+function reportsForHelp(): HelpReport[] {
+  return Object.entries(reports).map(([name, report]) => ({
+    name,
+    description: report.description,
+    params: reportParams(report),
+    sections: report.sections,
+    source: "report",
+  }));
+}
+
 function usage(userQueries: readonly UserQuery[], env: Readonly<Record<string, string | undefined>>): string {
   const queries = queriesForHelp(userQueries, env);
-  const width = Math.max(...queries.map((query) => query.name.length));
+  const reportEntries = reportsForHelp();
+  const width = Math.max(...[...queries, ...reportEntries].map((query) => query.name.length));
   const lines = queries.filter((query) => query.source === "built-in").map((query) => queryLine(query.name, query.description, query.params, width));
   const userLines = queries.filter((query) => query.source === "user").map((query) => queryLine(query.name, query.description, query.params, width));
+  const reportLines = reportEntries.map((report) => queryLine(report.name, report.description, report.params, width));
   return [
-    "usage: panoram <query> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]",
+    "usage: panoram <query|report> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]",
     "       panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all] [--json|--tsv] [--expect-empty] [--strict]",
     "",
     "queries:",
     ...lines,
     ...(userQueries.length === 0 ? [] : ["", `user queries (${dirname(userQueries[0]!.path)}):`, ...userLines]),
     "",
-    "--scope agents (default) runs git on the repositories that have an agent; all runs it on every ghq repository.",
+    "reports:",
+    ...reportLines,
+    "",
+    "--scope agents (default) runs repository-scoped providers on roots with an agent; all also uses every ghq root.",
     "--root defaults to the git toplevel of the current directory.",
     "--me excludes one pane; by default the caller's own pane, found from the environment.",
     "--expect-empty exits 3 after it prints rows when the query returned rows.",
@@ -69,7 +85,7 @@ function optionsFor(userQueries: readonly UserQuery[]): ParseArgsOptionsConfig {
   options["help"] = { type: "boolean", short: "h" };
   options["expect-empty"] = { type: "boolean" };
   options["strict"] = { type: "boolean" };
-  for (const query of [...Object.values(catalog), ...userQueries]) {
+  for (const query of [...Object.values(catalog), ...Object.values(reports).map((report) => ({ params: reportParams(report) })), ...userQueries]) {
     for (const parameter of query.params) {
       if (!Object.hasOwn(options, parameter)) options[parameter] = { type: "string" };
     }
@@ -86,7 +102,7 @@ function textOption(values: Record<string, unknown>, name: string): string | und
 
 function validateQueryOptions(values: Record<string, unknown>, userQueries: readonly UserQuery[], parameters: readonly string[], name: string): void {
   const accepted = new Set(parameters);
-  const discovered = new Set([...Object.values(catalog), ...userQueries].flatMap((query) => query.params));
+  const discovered = new Set([...Object.values(catalog), ...Object.values(reports).map((report) => ({ params: reportParams(report) })), ...userQueries].flatMap((query) => query.params));
   for (const parameter of discovered) {
     if (!commandOptions.has(parameter) && values[parameter] !== undefined && !accepted.has(parameter)) {
       throw new Error(`query ${name} does not take --${parameter}`);
@@ -108,6 +124,12 @@ function tsv(rows: Record<string, unknown>[]): string {
   const keys = Object.keys(rows[0]!);
   const cell = (v: unknown) => (v === null || v === undefined ? "" : String(v).replace(/[\t\n]/g, " "));
   return [keys.join("\t"), ...rows.map((r) => keys.map((k) => cell(r[k])).join("\t"))].join("\n") + "\n";
+}
+
+function reportTsv(sections: Record<string, Record<string, unknown>[]>): string {
+  return Object.entries(sections).map(([name, rows]) => rows.length === 0
+    ? `# ${name}\n`
+    : `# ${name}\n${tsv(rows)}\n`).join("");
 }
 
 function warn(providers: ProviderRow[]): void {
@@ -136,13 +158,18 @@ async function main(argv: string[]): Promise<number> {
   const me = textOption(values, "me");
   const help = values["help"] === true;
   const requestedName = positionals[0];
-  const named = sql === undefined && requestedName !== undefined ? catalog[requestedName] : undefined;
-  const userQuery = sql === undefined && requestedName !== undefined
+  const report = sql === undefined && requestedName !== undefined && Object.hasOwn(reports, requestedName)
+    ? reports[requestedName as keyof typeof reports]
+    : undefined;
+  const named = report === undefined && sql === undefined && requestedName !== undefined && Object.hasOwn(catalog, requestedName)
+    ? catalog[requestedName]
+    : undefined;
+  const userQuery = report === undefined && sql === undefined && requestedName !== undefined
     ? userQueries.find((query) => query.name === requestedName)
     : undefined;
-  validateQueryOptions(values, userQueries, named?.params ?? userQuery?.params ?? [], requestedName ?? "sql");
+  validateQueryOptions(values, userQueries, report === undefined ? named?.params ?? userQuery?.params ?? [] : reportParams(report), requestedName ?? "sql");
   if (help || (positionals.length === 0 && sql === undefined)) {
-    if (help && values["json"] === true) console.log(JSON.stringify(queriesForHelp(userQueries, process.env)));
+    if (help && values["json"] === true) console.log(JSON.stringify([...queriesForHelp(userQueries, process.env), ...reportsForHelp()]));
     else console.log(usage(userQueries, process.env));
     return help ? 0 : 2;
   }
@@ -155,7 +182,8 @@ async function main(argv: string[]): Promise<number> {
   if (me !== undefined) params["me"] = me === "" ? null : me;
 
   let name: string;
-  let result: RunResult<Record<string, unknown>>;
+  let result: RunResult<Record<string, unknown>> | undefined;
+  let reportResult: ReportResult | undefined;
   if (sql !== undefined) {
     name = "sql";
     // The two flags are the two parameters a statement can name. Any other
@@ -164,11 +192,20 @@ async function main(argv: string[]): Promise<number> {
     result = await runSql(sql, { loaders, scope, params });
   } else {
     name = requestedName!;
-    if (!named && !userQuery) {
+    if (!report && !named && !userQuery) {
       console.error(`panoram: no query named ${name}\n\n${usage(userQueries, process.env)}`);
       return 2;
     }
-    if (userQuery) {
+    if (report) {
+      const parameters = reportParams(report);
+      if (parameters.includes("root")) params["root"] = toplevel(root ?? process.cwd());
+      for (const parameter of parameters) {
+        if (parameter === "root" || parameter === "me") continue;
+        const value = textOption(values, parameter);
+        if (value !== undefined) params[parameter] = value;
+      }
+      reportResult = await runReport(report.sections.map(([section, query]) => [section, catalog[query]!.query] as const), { loaders, scope, params });
+    } else if (userQuery) {
       if (userQuery.params.includes("root")) params["root"] = toplevel(root ?? process.cwd());
       for (const parameter of userQuery.params) {
         if (parameter === "root" || parameter === "me") continue;
@@ -189,11 +226,18 @@ async function main(argv: string[]): Promise<number> {
     }
   }
   recordCall(process.env, name);
+  if (reportResult !== undefined) {
+    if (values["tsv"] === true) process.stdout.write(reportTsv(reportResult.sections));
+    else console.log(JSON.stringify({ report: name, root: reportResult.params["root"], scope, me: reportResult.me, params: reportResult.params, sections: reportResult.sections, providers: reportResult.providers }, null, 2));
+    warn(reportResult.providers);
+    return exitCodeFor({ rows: reportResult.sections["agents"] ?? [], providers: reportResult.providers }, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
+  }
+  if (result === undefined) throw new Error(`no result for ${name}`);
   if (values["tsv"] === true) {
     process.stdout.write(tsv(result.rows));
     warn(result.providers);
   } else {
-    console.log(JSON.stringify({ query: name, scope, me: result.me, rows: result.rows, providers: result.providers }, null, 2));
+    console.log(JSON.stringify({ query: name, scope, me: result.me, params: result.params, rows: result.rows, providers: result.providers }, null, 2));
   }
   return exitCodeFor(result, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
 }

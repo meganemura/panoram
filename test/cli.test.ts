@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
-import { catalog } from "../catalog.ts";
+import { catalog, reports } from "../catalog.ts";
 import { exitCodeFor } from "../cli.ts";
 import { callCounts, recordCall } from "../core/calls.ts";
 
@@ -21,6 +21,8 @@ test("help lists every catalog query", async () => {
     encoding: "utf8",
   });
   for (const name of Object.keys(catalog)) assert.match(stdout, new RegExp(`\\b${name}\\b`));
+  assert.match(stdout, /^reports:$/m);
+  for (const name of Object.keys(reports)) assert.match(stdout, new RegExp(`\\b${name}\\b`));
 });
 
 test("JSON help lists every built-in query with its parameters", async () => {
@@ -28,11 +30,18 @@ test("JSON help lists every built-in query with its parameters", async () => {
     cwd: process.cwd(),
     encoding: "utf8",
   });
-  const listed = JSON.parse(stdout) as { name: string; description: string; params: string[]; source: string }[];
+  const listed = JSON.parse(stdout) as { name: string; description: string; params: string[]; sections?: [string, string][]; source: string }[];
   const byName = new Map(listed.map((query) => [query.name, query]));
   for (const [name, query] of Object.entries(catalog)) {
     assert.deepEqual(byName.get(name), { name, description: query.description, params: query.params, source: "built-in" });
   }
+  assert.deepEqual(byName.get("here"), {
+    name: "here",
+    description: reports.here.description,
+    params: ["root"],
+    sections: reports.here.sections,
+    source: "report",
+  });
 });
 
 test("expect-empty returns 3 after it prints rows", async () => {
@@ -40,7 +49,7 @@ test("expect-empty returns 3 after it prints rows", async () => {
     execFileAsync(process.execPath, ["cli.ts", "--sql", "select 1 as x", "--expect-empty"], { cwd: process.cwd(), encoding: "utf8" }),
     (error: NodeJS.ErrnoException & { code?: number; stdout?: string }) => {
       assert.equal(error.code, 3);
-      assert.deepEqual(JSON.parse(error.stdout!), { query: "sql", scope: "agents", me: null, rows: [{ x: 1 }], providers: [] });
+      assert.deepEqual(JSON.parse(error.stdout!), { query: "sql", scope: "agents", me: null, params: {}, rows: [{ x: 1 }], providers: [] });
       return true;
     },
   );
@@ -48,7 +57,7 @@ test("expect-empty returns 3 after it prints rows", async () => {
 
 test("expect-empty returns 0 for an empty result", async () => {
   const { stdout } = await execFileAsync(process.execPath, ["cli.ts", "--sql", "select 1 as x where 0", "--expect-empty"], { cwd: process.cwd(), encoding: "utf8" });
-  assert.deepEqual(JSON.parse(stdout), { query: "sql", scope: "agents", me: null, rows: [], providers: [] });
+  assert.deepEqual(JSON.parse(stdout), { query: "sql", scope: "agents", me: null, params: {}, rows: [], providers: [] });
 });
 
 function resultForExitCode(rows: number, oks: readonly number[]) {

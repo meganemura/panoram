@@ -4,8 +4,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { LoadContext, Loader } from "../../core/loader.ts";
-import { herdrQueries } from "../herdr/public.ts";
-import { repoQueries } from "../repos/public.ts";
+import { rootsInScope } from "../../core/scope.ts";
 import { headsignCommands } from "./module.ts";
 import type { WorkflowRunsId } from "./solarsql.generated.ts";
 
@@ -34,12 +33,6 @@ export function runFrom(root: string, text: string): Run {
     end_reason: optionalString(state.end_reason), stop_nudges: integer(state.stop_nudges, 0), driver_agent: optionalString(state.driver_agent),
     phase_entered_at: Number.isFinite(phase_entered_at) ? phase_entered_at : null,
   };
-}
-
-async function rootsInScope(ctx: LoadContext): Promise<string[]> {
-  const roots = new Set((await ctx.db.all(herdrQueries.roots)).flatMap((row) => row.root === null ? [] : [row.root]));
-  if (ctx.scope === "all") for (const row of await ctx.db.all(repoQueries.paths)) roots.add(row.path);
-  return [...roots];
 }
 
 export const headsignLoader: Loader = {

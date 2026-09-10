@@ -1,13 +1,11 @@
-// Fills `worktrees` and `git_status` for the roots in scope. Under
-// `agents` the roots come from the agents table; under `all` the ghq
-// repositories join them. Both come through the owners' public files,
+// Fills `worktrees` and `git_status` for the roots in scope. Agent roots,
+// ghq roots under `all`, and an explicit root share the core scope helper,
 // which is why this loader runs after herdr and repos.
 // The per-root calls run concurrently: the child processes are the whole
 // cost of a run, and git handles the parallelism.
 // Boundary: this provider's tables only.
 import type { Loader, LoadContext } from "../../core/loader.ts";
-import { herdrQueries } from "../herdr/public.ts";
-import { repoQueries } from "../repos/public.ts";
+import { rootsInScope } from "../../core/scope.ts";
 import { gitCommands } from "./module.ts";
 import type { GitStatusId, WorktreesId } from "./solarsql.generated.ts";
 
@@ -55,10 +53,7 @@ export const gitLoader: Loader = {
   tables: ["worktrees", "git_status"],
   after: ["herdr", "repos"],
   async load(ctx) {
-    const roots = new Set<string>();
-    for (const r of await ctx.db.all(herdrQueries.roots)) if (r.root !== null) roots.add(r.root);
-    if (ctx.scope === "all") for (const r of await ctx.db.all(repoQueries.paths)) roots.add(r.path);
-    const list = [...roots];
+    const list = await rootsInScope(ctx);
     const [worktrees, statuses] = await Promise.all([
       Promise.all(list.map((root) => worktreesOf(ctx, root))),
       Promise.all(list.map((root) => statusOf(ctx, root))),

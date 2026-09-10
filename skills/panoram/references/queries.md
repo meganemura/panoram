@@ -4,6 +4,13 @@ Every built-in query, its parameters, and its columns.
 Columns marked `?` can be null.
 `root` is the git toplevel of a repository, the key every join uses.
 
+## Reports
+
+`here` runs these ordered sections for one `root`: `agents` (`in-dir`), `git`
+(`git-status`), `worktrees`, `pull_requests` (`branch-pull-requests`), `ports`
+(`ports-in-dir`), `processes` (`processes-in-dir`), `tools` (`tools-in-dir`),
+`issues`, and `workflow`.
+
 ## Agents (herdr)
 
 | Query | Parameters | Columns |
@@ -33,13 +40,16 @@ Columns marked `?` can be null.
 
 `name` is the name the user gave the session.
 `kind` and `claude_status` are Claude Code values. `source` is a Codex value.
-A session joins an agent through the session id herdr's integration reports; a session without one appears in `sessions-without-pane`.
+A session joins an agent through the session id herdr's integration reports.
+`agents-with-sessions` keeps an agent with no session and returns null session columns.
+A session without a pane appears in `sessions-without-pane`.
 
 ## Git
 
 | Query | Parameters | Columns |
 | --- | --- | --- |
 | `dirty` | | `root`, `branch?`, `dirty_count`, `untracked_count` |
+| `git-status` | `root` | `root`, `branch?`, `upstream?`, `ahead`, `behind`, `dirty_count`, `untracked_count` |
 | `worktrees` | `root` | `path`, `branch?`, `head?` |
 | `agents-in-dirty-repos` | | `pane_id`, `name?`, `agent_status`, `root?`, `branch?`, `dirty_count`, `untracked_count` |
 | `crowded-repos` | | `root?`, `agents`, `working?`, `dirty_count` |
@@ -75,6 +85,7 @@ A session joins an agent through the session id herdr's integration reports; a s
 | Query | Parameters | Columns |
 | --- | --- | --- |
 | `pull-requests` | `root` | `id`, `repo`, `root?`, `number`, `title`, `head_branch?`, `head_repo?`, `base_branch?`, `author?`, `is_draft`, `state`, `review_decision?`, `checks?`, `updated_at`, `url` |
+| `branch-pull-requests` | `root` | `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url` |
 | `review-requests` | | `id`, `repo`, `root?`, `number`, `title`, `author?`, `updated_at`, `url`, ordered by `updated_at` descending |
 | `prs-with-agents` | | `pane_id`, `name?`, `agent_status`, `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url` |
 | `failing-checks-with-agents` | | `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url`, `agents` |

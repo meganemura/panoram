@@ -5,8 +5,7 @@
 // Origins identify a GitHub repository even when worktrees use different paths.
 // Boundary: this provider's table only.
 import type { LoadContext, Loader } from "../../core/loader.ts";
-import { herdrQueries } from "../herdr/public.ts";
-import { repoQueries } from "../repos/public.ts";
+import { rootsInScope } from "../../core/scope.ts";
 import { githubCommands } from "./module.ts";
 import type { PullRequestsId, ReviewRequestsId } from "./solarsql.generated.ts";
 
@@ -80,11 +79,8 @@ function asReviewRequest(value: unknown, roots: ReadonlyMap<string, string>): Re
 // The GitHub repository of every root in scope, from its origin. A root
 // without origin, or with an origin elsewhere, is not on GitHub.
 async function repoRootsOf(ctx: LoadContext): Promise<Map<string, string>> {
-  const roots = new Set<string>();
-  for (const row of await ctx.db.all(herdrQueries.roots)) if (row.root !== null) roots.add(row.root);
-  if (ctx.scope === "all") for (const row of await ctx.db.all(repoQueries.paths)) roots.add(row.path);
   const rootRepos = new Map<string, string>();
-  await Promise.all([...roots].map(async (root) => {
+  await Promise.all((await rootsInScope(ctx)).map(async (root) => {
     try {
       const origin = await ctx.repo.originOf(root);
       const repo = origin === null ? null : parseGithubOrigin(origin);

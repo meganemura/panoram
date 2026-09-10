@@ -20,6 +20,9 @@ export type LoadContext = {
   db: Database;
   exec: Exec;
   scope: Scope;
+  // Explicit roots extend the roots discovered from agents and ghq. This lets
+  // a root query observe a repository before any agent enters it.
+  roots: readonly string[];
   env: Readonly<Record<string, string | undefined>>;
   repo: Repo;
 };

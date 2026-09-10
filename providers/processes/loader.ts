@@ -3,8 +3,7 @@
 // Boundary: this provider's tables only.
 import { basename } from "node:path";
 import type { LoadContext, Loader } from "../../core/loader.ts";
-import { herdrQueries } from "../herdr/public.ts";
-import { repoQueries } from "../repos/public.ts";
+import { rootsInScope } from "../../core/scope.ts";
 import { processCommands } from "./module.ts";
 import type { ListenersId, ProcessesId } from "./solarsql.generated.ts";
 
@@ -60,12 +59,6 @@ function parseListeners(output: string, cwdByPid: ReadonlyMap<number, string[]>,
   return result;
 }
 
-async function rootsInScope(ctx: LoadContext): Promise<string[]> {
-  const roots = new Set((await ctx.db.all(herdrQueries.roots)).flatMap((row) => row.root === null ? [] : [row.root]));
-  if (ctx.scope === "all") for (const row of await ctx.db.all(repoQueries.paths)) roots.add(row.path);
-  return [...roots].sort((left, right) => right.length - left.length);
-}
-
 export const processesLoader: Loader = {
   name: "processes", tables: ["processes", "listeners"], after: ["herdr", "repos"],
   async load(ctx) {
@@ -77,7 +70,7 @@ export const processesLoader: Loader = {
       // `-a` ands the selectors; without it lsof lists every file of the user
       // next to the listeners, and the parser would take connections for ports.
       ctx.exec("lsof", ["-a", "-nP", "-iTCP", "-sTCP:LISTEN", "-u", String(uid), "-Fpn"], undefined, { exitCodes: [1] }),
-      rootsInScope(ctx),
+      rootsInScope(ctx).then((roots) => roots.sort((left, right) => right.length - left.length)),
     ]);
     const cwdByPid = parseLsof(cwdOutput);
     const ps = parsePs(psOutput).filter((row) => row.pid !== process.pid && row.ppid !== process.pid);

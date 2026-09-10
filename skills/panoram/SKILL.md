@@ -24,7 +24,7 @@ The rules of the envelope, the flags, and the exit codes: [references/output.md]
 
 ## Workflow
 
-1. **Before you start work in a repository**: `in-dir` (who else is here), `crowded-repos`, `dirty` and `behind-upstream-with-agents` (what state the checkout is in). The rows exclude your own pane. As a gate: `panoram in-dir --expect-empty --strict` exits 0 only when nobody else is here and every provider answered.
+1. **Before you start work in a repository**: `here` (one call: who else is here with `in-dir`, the checkout with `git-status` and `worktrees`, its pull request with `branch-pull-requests`, ports with `ports-in-dir`, processes with `processes-in-dir`, tools with `tools-in-dir`, issues, and the workflow). The rows exclude your own pane. As a gate: `panoram here --expect-empty --strict` exits 0 only when nobody else is here and every provider answered.
 2. **When the user asks what is going on**: `agents-with-sessions` (names, idle time), `working`, `idle-sessions`, `workspaces`.
 3. **When you look for a place to work**: `idle-worktrees` (a worktree with nobody in it), `dirty-unattended` (changes nobody is tending).
 4. **When a tool is missing or the wrong version**: `tools-in-dir`, `missing-tools-with-agents`, `tool-versions-split`.
@@ -42,6 +42,7 @@ The table lists the queries the workflow names. Every query, with its parameters
 
 | Query | Parameter | Answers |
 | --- | --- | --- |
+| `here` | `--root` | Everything about one repository, in sections. |
 | `in-dir` | `--root` | The agents in one repository. |
 | `crowded-repos` | | Repositories with more than one agent, and their dirt. |
 | `dirty` | | Repositories with uncommitted changes, dirtiest first. |
@@ -68,7 +69,7 @@ The table lists the queries the workflow names. Every query, with its parameters
 | `issues-unattended` | | Repositories with open beads issues and no agent. |
 
 `--root` defaults to the git toplevel of the current directory.
-`--scope all` runs git and mise on every ghq repository instead of the repositories with an agent; it takes a few seconds.
+`--scope all` runs each repository-scoped provider on every ghq repository instead of the repositories with an agent; it takes a few seconds.
 
 ## Where the reasoning is
 

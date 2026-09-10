@@ -37,7 +37,8 @@ export type RunOptions = {
   exec?: Exec;
   env?: Readonly<Record<string, string | undefined>>;
   repo?: Repo;
-  // Parameters for the statement. `me` is filled by the core when the
+  // Parameters for the statement. A string `root` also extends the roots
+  // repository-scoped loaders inspect. `me` is filled by the core when the
   // statement names it and the caller did not pass it.
   params?: Record<string, unknown>;
 };
@@ -47,11 +48,23 @@ export type RunResult<R> = {
   providers: ProviderRow[];
   // The caller's own row, when a provider could tell.
   me: string | null;
+  // The values bound to the statement. They identify an empty observation.
+  params: Record<string, unknown>;
+};
+
+export type ReportSection = readonly [name: string, query: Query<string, Entry>];
+
+export type ReportResult = {
+  sections: Record<string, Record<string, unknown>[]>;
+  providers: ProviderRow[];
+  me: string | null;
+  params: Record<string, unknown>;
 };
 
 // A named query from a catalog.
 export async function runQuery<Q extends Query<string, Entry>>(query: Q, options: RunOptions): Promise<RunResult<Record<string, unknown>>> {
-  return run(query.meta.reads, [...query.meta.params], (db, params) => db.all(query, params as never), options);
+  const state = await prepare(query.meta.reads, [...query.meta.params], options);
+  return { rows: await state.db.all(query, state.params as never), ...state };
 }
 
 export function sqlParameterNames(sql: string): string[] {
@@ -61,18 +74,45 @@ export function sqlParameterNames(sql: string): string[] {
 // Ad hoc SQL. Parameters bind by the names the statement uses.
 export async function runSql(sql: string, options: RunOptions): Promise<RunResult<Record<string, unknown>>> {
   const names = sqlParameterNames(sql);
-  return run((raw) => tablesRead(raw, sql), names, (_db, params, raw) => {
-    const statement = raw.prepare(sql);
-    const bound = Object.fromEntries(names.map((n) => [n, params[n] ?? null]));
-    return Promise.resolve(statement.all(bound as Record<string, never>).map((r) => ({ ...r })) as Record<string, unknown>[]);
-  }, options);
+  const state = await prepare((raw) => tablesRead(raw, sql), names, options);
+  const statement = state.raw.prepare(sql);
+  const bound = Object.fromEntries(names.map((name) => [name, state.params[name] ?? null]));
+  const rows = statement.all(bound as Record<string, never>).map((row) => ({ ...row })) as Record<string, unknown>[];
+  return { rows, ...state };
 }
 
-async function run<R>(tables: readonly string[] | ((raw: DatabaseSync) => readonly string[]), paramNames: readonly string[], read: (db: Database, params: Record<string, unknown>, raw: DatabaseSync) => Promise<R[]>, options: RunOptions): Promise<RunResult<R>> {
+// A report composes named queries after one loader pass. Its sections remain
+// catalog entries, so the provider cost of each section stays inspectable.
+export async function runReport(sections: readonly ReportSection[], options: RunOptions): Promise<ReportResult> {
+  const tables = [...new Set(sections.flatMap(([, query]) => query.meta.reads))];
+  const params = [...new Set(sections.flatMap(([, query]) => query.meta.params))];
+  const state = await prepare(tables, params, options);
+  const values: Record<string, Record<string, unknown>[]> = Object.create(null);
+  for (const [name, query] of sections) values[name] = await state.db.all(query, state.params as never);
+  return { sections: values, ...state };
+}
+
+type RunState = {
+  raw: DatabaseSync;
+  db: Database;
+  providers: ProviderRow[];
+  me: string | null;
+  params: Record<string, unknown>;
+};
+
+async function prepare(tables: readonly string[] | ((raw: DatabaseSync) => readonly string[]), paramNames: readonly string[], options: RunOptions): Promise<RunState> {
   const raw = new DatabaseSync(":memory:");
   migrate(raw, migrations);
   const db = node(raw);
-  const ctx = { db, exec: options.exec ?? exec, scope: options.scope ?? "agents", env: options.env ?? process.env, repo: options.repo ?? fsRepo };
+  const root = options.params?.["root"];
+  const ctx = {
+    db,
+    exec: options.exec ?? exec,
+    scope: options.scope ?? "agents",
+    roots: typeof root === "string" ? [root] : [],
+    env: options.env ?? process.env,
+    repo: options.repo ?? fsRepo,
+  };
   const needed = loadersFor(options.loaders, typeof tables === "function" ? tables(raw) : tables);
   const providers: ProviderRow[] = [];
   // Loaders run in dependency order, one at a time. A failed loader leaves
@@ -104,9 +144,12 @@ async function run<R>(tables: readonly string[] | ((raw: DatabaseSync) => readon
       me = params["me"] as string | null;
     }
   }
-  for (const name of paramNames) if (params[name] === undefined) throw new Error(`missing parameter: ${name}`);
-  const rows = await read(db, params, raw);
-  return { rows, providers: await db.all(providerQueries.all), me };
+  const bound: Record<string, unknown> = {};
+  for (const name of paramNames) {
+    if (params[name] === undefined) throw new Error(`missing parameter: ${name}`);
+    bound[name] = params[name];
+  }
+  return { raw, db, providers: await db.all(providerQueries.all), me, params: bound };
 }
 
 function round(ms: number): number {

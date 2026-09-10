@@ -4,8 +4,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { LoadContext, Loader } from "../../core/loader.ts";
-import { herdrQueries } from "../herdr/public.ts";
-import { repoQueries } from "../repos/public.ts";
+import { rootsInScope } from "../../core/scope.ts";
 import { skillsCommands } from "./module.ts";
 import type { PluginsId, SkillsId } from "./solarsql.generated.ts";
 
@@ -132,14 +131,13 @@ export const skillsLoader: Loader = {
   async load(ctx) {
     const home = ctx.env["HOME"];
     if (!home) throw new Error("skills: HOME is not set");
-    const roots = new Set((await ctx.db.all(herdrQueries.roots)).flatMap((row) => row.root === null ? [] : [row.root]));
-    if (ctx.scope === "all") for (const row of await ctx.db.all(repoQueries.paths)) roots.add(row.path);
+    const roots = await rootsInScope(ctx);
     const [claude, codex, claudeUser, codexUser, codexSystem, projects] = await Promise.all([
       claudePlugins(home), codexPlugins(home),
       skillsAt(join(home, ".claude", "skills"), "claude-user", "claude", null, null),
       skillsAt(join(home, ".codex", "skills"), "codex-user", "codex", null, null),
       skillsAt(join(home, ".codex", "skills", ".system"), "codex-system", "codex", null, null),
-      Promise.all([...roots].map((root) => skillsAt(join(root, ".claude", "skills"), "claude-project", "claude", root, null))),
+      Promise.all(roots.map((root) => skillsAt(join(root, ".claude", "skills"), "claude-project", "claude", root, null))),
     ]);
     const loadedSkills = await ctx.db.run(skillsCommands.loadSkills, { rows: [...claude.skills, ...codex.skills, ...claudeUser, ...codexUser, ...codexSystem, ...projects.flat()] });
     if (!loadedSkills.ok) throw new Error(`skills: ${loadedSkills.kind}`);

@@ -9,8 +9,7 @@ import { statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { LoadContext, Loader } from "../../core/loader.ts";
-import { herdrQueries } from "../herdr/public.ts";
-import { repoQueries } from "../repos/public.ts";
+import { rootsInScope } from "../../core/scope.ts";
 import { miseCommands } from "./module.ts";
 import type { ToolUsesId, ToolsId } from "./solarsql.generated.ts";
 
@@ -109,11 +108,8 @@ export const miseLoader: Loader = {
     const loadedTools = await ctx.db.run(miseCommands.loadTools, { rows: tools });
     if (!loadedTools.ok) throw new Error(`tools: ${loadedTools.kind}`);
 
-    const roots = new Set<string>();
-    for (const row of await ctx.db.all(herdrQueries.roots)) if (row.root !== null) roots.add(row.root);
-    if (ctx.scope === "all") for (const row of await ctx.db.all(repoQueries.paths)) roots.add(row.path);
     const groups = new Map<string, string[]>();
-    for (const root of roots) {
+    for (const root of await rootsInScope(ctx)) {
       const key = miseConfigFilesOf(root, ctx.env, fileExists).join("\n");
       const group = groups.get(key);
       if (group === undefined) groups.set(key, [root]);

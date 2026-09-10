@@ -4,8 +4,7 @@
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { LoadContext, Loader } from "../../core/loader.ts";
-import { herdrQueries } from "../herdr/public.ts";
-import { repoQueries } from "../repos/public.ts";
+import { rootsInScope } from "../../core/scope.ts";
 import { beadsCommands } from "./module.ts";
 import type { IssuesId } from "./solarsql.generated.ts";
 
@@ -37,12 +36,6 @@ export function issuesFrom(root: string, output: string): Issue[] {
       dependency_count: integer(issue.dependency_count, 0) ?? 0, dependent_count: integer(issue.dependent_count, 0) ?? 0, comment_count: integer(issue.comment_count, 0) ?? 0,
     };
   });
-}
-
-async function rootsInScope(ctx: LoadContext): Promise<string[]> {
-  const roots = new Set((await ctx.db.all(herdrQueries.roots)).flatMap((row) => row.root === null ? [] : [row.root]));
-  if (ctx.scope === "all") for (const row of await ctx.db.all(repoQueries.paths)) roots.add(row.path);
-  return [...roots];
 }
 
 async function hasBeads(root: string): Promise<boolean> {

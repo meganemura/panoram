@@ -32,6 +32,7 @@ test("user query files provide names, descriptions, and parameters", async () =>
     "plain.sql": "select :limit as limit",
     "Bad.sql": "select 1",
     "agents.sql": "select 1",
+    "here.sql": "select 1",
   }, (configHome, directory) => {
     assert.deepEqual(loadUserQueries({ XDG_CONFIG_HOME: configHome }), [
       {
@@ -76,6 +77,7 @@ test("the CLI binds a user query flag as text", async () => {
       query: "branch",
       scope: "agents",
       me: null,
+      params: { branch: "42" },
       rows: [{ branch: "42" }],
       providers: [],
     });

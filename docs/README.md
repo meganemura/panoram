@@ -31,3 +31,4 @@ Each ADR describes one decision and its consequences.
 | [0022](adr/0022-no-process-bursts-before-big-binaries.md) | Large binaries run before process bursts. |
 | [0023](adr/0023-a-call-log-orders-help.md) | A call log orders help by use. |
 | [0024](adr/0024-columns-take-the-source-name-and-subtypes-hold-the-rest.md) | Columns take the source name, and subtypes hold the rest. |
+| [0025](adr/0025-a-report-is-sections-from-one-database.md) | A report is sections from one database. |

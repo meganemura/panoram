@@ -20,6 +20,13 @@ export const reportQueries = queries(generated, {
     from agents a join git_status g on g.root = a.root
     where g.dirty_count > 0 and (:me is null or a.pane_id <> :me)
     order by g.dirty_count desc, a.pane_id`,
+  // The checkout branch identifies a pull request only when its head belongs
+  // to the same repository, which excludes fork branches with the same name.
+  branchPullRequests: `
+    select p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url
+    from git_status g join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo
+    where g.root = :root
+    order by p.repo, p.number`,
   // Repositories with more than one agent, and their dirt.
   crowdedRepos: `
     select a.root, cast(count(*) as integer) as agents, cast(sum(a.agent_status = 'working') as integer) as working,
@@ -65,7 +72,7 @@ export const reportQueries = queries(generated, {
   agentsWithSessions: `
     select a.pane_id, a.agent, a.agent_status, s.name, c.status as claude_status, c.kind, x.model, x.source, s.started_at, s.updated_at, s.last_turn_at, s.last_branch, a.root,
            cast((unixepoch('subsec') * 1000 - s.updated_at) / 60000 as integer) as idle_minutes
-    from agents a join sessions s on s.session_id = a.session_id
+    from agents a left join sessions s on s.session_id = a.session_id
     left join claude_sessions c on c.session_id = s.session_id
     left join codex_sessions x on x.session_id = s.session_id
     where :me is null or a.pane_id <> :me
