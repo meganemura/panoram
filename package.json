@@ -1,11 +1,27 @@
 {
   "name": "panoram",
-  "version": "0.0.0",
-  "description": "A query layer over the state of one developer's machine: agents, repositories, worktrees.",
+  "version": "0.1.0",
+  "description": "Named queries over the state of one developer's machine: which coding agents run where, which repositories are dirty, which worktrees and sessions sit idle.",
+  "keywords": [
+    "coding-agents",
+    "developer-tools",
+    "cli",
+    "sqlite",
+    "typescript",
+    "claude-code",
+    "codex",
+    "git",
+    "worktree"
+  ],
   "license": "MIT",
   "author": "meganemura",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meganemura/panoram.git"
+  },
+  "homepage": "https://github.com/meganemura/panoram#readme",
+  "bugs": "https://github.com/meganemura/panoram/issues",
   "type": "module",
-  "private": true,
   "engines": {
     "node": ">=24.10.0"
   },
@@ -13,13 +29,23 @@
     "panoram": "./cli.ts"
   },
   "files": [
+    "cli.ts",
+    "catalog.ts",
+    "panoram.config.ts",
+    "core",
+    "providers",
+    "migrations",
+    "skills",
     "README.md",
+    "README.ja.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "solarsql build panoram.config.ts",
     "check": "solarsql build --check panoram.config.ts && tsc --noEmit",
-    "test": "node --test 'test/**/*.test.ts'"
+    "test": "node --test 'test/**/*.test.ts'",
+    "prepublishOnly": "npm run check && npm test"
   },
   "dependencies": {
     "solarsql": "0.2.0"

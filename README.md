@@ -38,12 +38,18 @@ A provider that is missing gives an empty table and a `providers` row that says 
 ## Install
 
 ```sh
-npm install
-npm link
+npm install -g panoram
 panoram --help
 ```
 
-`npm link` puts the `panoram` command on the PATH of the current Node; without it, `node cli.ts <query>` from the checkout does the same.
+From a checkout, `npm install && npm link` does the same; `node cli.ts <query>` works without the link.
+
+Give the skill to an agent on this machine:
+
+```sh
+gh skill install meganemura/panoram panoram --scope user --agent claude-code
+gh skill install meganemura/panoram panoram --scope user --agent codex
+```
 
 ## Read next
 

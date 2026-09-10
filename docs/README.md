@@ -1,5 +1,7 @@
 # Design records
 
+How a version is released: [releasing.md](releasing.md).
+
 This directory records architecture decisions for panoram.
 Each ADR describes one decision and its consequences.
 
@@ -25,3 +27,4 @@ Each ADR describes one decision and its consequences.
 | [0018](adr/0018-skills-are-read-from-the-filesystem.md) | Skills and plugins are read from agent files. |
 | [0019](adr/0019-beads-issues-are-read-per-repository.md) | Beads issues are read per repository. |
 | [0020](adr/0020-headsign-state-is-read-from-the-file.md) | Headsign state is read from the file. |
+| [0021](adr/0021-the-package-ships-the-source-and-the-skill.md) | The package ships the TypeScript source and the skill, and the skill installs from the repository. |

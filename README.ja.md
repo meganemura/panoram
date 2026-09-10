@@ -65,13 +65,19 @@ pane と session の結合には herdr の Claude Code と Codex の integration
 ## 導入
 
 ```sh
-npm install
-npm link
+npm install -g panoram
 panoram --help
 ```
 
-`npm link` は現在の Node の PATH に `panoram` コマンドを置く。
-link しない場合は、checkout で `node cli.ts <query>` を打つと同じ命令になる。
+checkout からなら `npm install && npm link` が同じことをする。
+link しなくても `node cli.ts <query>` は動く。
+
+この機械のエージェントに skill を渡す:
+
+```sh
+gh skill install meganemura/panoram panoram --scope user --agent claude-code
+gh skill install meganemura/panoram panoram --scope user --agent codex
+```
 
 ## 次に読むもの
 

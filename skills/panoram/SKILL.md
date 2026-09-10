@@ -1,5 +1,6 @@
 ---
 name: panoram
+license: MIT
 description: Use when an agent wants to know the state of the developer's machine before it acts. Which agents run where and what they do, which repositories are dirty or behind, which worktrees have nobody in them, which sessions are idle, which tool versions a repository activates. Also use when the user names panoram, a panoram query, or asks to add a query.
 ---
 
