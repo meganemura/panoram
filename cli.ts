@@ -169,6 +169,13 @@ async function main(argv: string[]): Promise<number> {
   return 0;
 }
 
+// A reader that stops early (`panoram agents | head`) closes the pipe; that
+// is the reader's choice, not a failure of panoram.
+process.stdout.on("error", (e: NodeJS.ErrnoException) => {
+  if (e.code === "EPIPE") process.exit(0);
+  throw e;
+});
+
 try {
   process.exitCode = await main(process.argv.slice(2));
 } catch (e) {
