@@ -54,4 +54,16 @@ export const reportQueries = queries(generated, {
            cast(group_concat(distinct u.version) as text) as version_list
     from tool_uses u join agents a on a.root = u.root
     group by u.tool having count(distinct u.version) > 1 order by u.tool`,
+  // Agent panes with the session record that describes their recent work.
+  agentsWithSessions: `
+    select a.pane_id, a.agent, a.status, s.name, s.kind, s.started_at, s.updated_at, s.last_turn_at, s.last_branch, a.root,
+           cast((unixepoch('subsec') * 1000 - s.updated_at) / 60000 as integer) as idle_minutes
+    from agents a join sessions s on s.session_id = a.session_id
+    where :me is null or a.pane_id <> :me
+    order by idle_minutes desc`,
+  // Live sessions can lack a pane when they run headlessly or elsewhere.
+  sessionsWithoutPane: `
+    select s.session_id, s.agent, s.cwd, s.root, s.name, s.kind, s.updated_at
+    from sessions s left join agents a on a.session_id = s.session_id
+    where a.pane_id is null order by s.agent, s.updated_at`,
 });

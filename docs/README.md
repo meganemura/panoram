@@ -18,3 +18,4 @@ Each ADR describes one decision and its consequences.
 | [0011](adr/0011-single-regenerated-migration.md) | The schema uses one regenerated migration. |
 | [0012](adr/0012-mise-provider.md) | mise is the fourth provider. |
 | [0013](adr/0013-user-queries-are-sql-files.md) | User queries are SQL files. |
+| [0014](adr/0014-sessions-are-observed-not-searched.md) | Sessions are observed, not searched. |

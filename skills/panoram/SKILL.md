@@ -24,6 +24,8 @@ Use `panoram <query>` when the package bin is linked.
 | `repos` | None | Lists repositories that ghq manages. |
 | `tools` | None | Lists every tool version mise has installed. |
 | `tools-in-dir` | `--root DIR` | Lists the tools mise activates in one repository. |
+| `sessions` | None | Lists Claude Code and Codex sessions alive now. |
+| `idle-sessions` | None | Lists sessions by idle time. |
 | `agents-in-dirty-repos` | None | Lists agents in dirty repositories. |
 | `crowded-repos` | None | Lists repositories with more than one agent. |
 | `idle-worktrees` | None | Lists linked worktrees without an agent. |
@@ -32,6 +34,8 @@ Use `panoram <query>` when the package bin is linked.
 | `behind-upstream-with-agents` | None | Lists repositories behind upstream with an agent. |
 | `missing-tools-with-agents` | None | Lists repositories with an agent where a requested tool is not installed. |
 | `tool-versions-split` | None | Lists tools whose active version differs between repositories with an agent. |
+| `agents-with-sessions` | None | Lists agents with session details and last activity. |
+| `sessions-without-pane` | None | Lists live sessions that do not have an agent pane. |
 
 User queries appear in `--help` with their descriptions.
 An agent can call a user query like a built-in query.

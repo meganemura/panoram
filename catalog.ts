@@ -7,6 +7,7 @@ import { gitQueries } from "./providers/git/public.ts";
 import { miseQueries } from "./providers/mise/public.ts";
 import { repoQueries } from "./providers/repos/public.ts";
 import { reportQueries } from "./providers/report/public.ts";
+import { sessionQueries } from "./providers/sessions/public.ts";
 
 export type Named = { query: Query<string, Entry>; description: string; params: readonly string[] };
 
@@ -20,6 +21,8 @@ export const catalog: Readonly<Record<string, Named>> = {
   "repos": { query: repoQueries.all, description: "Every repository ghq manages.", params: [] },
   "tools": { query: miseQueries.installed, description: "Every tool version mise has installed.", params: [] },
   "tools-in-dir": { query: miseQueries.inDir, description: "The tools mise activates in one repository, by its root.", params: ["root"] },
+  "sessions": { query: sessionQueries.all, description: "Every Claude Code and Codex session alive now.", params: [] },
+  "idle-sessions": { query: sessionQueries.idle, description: "Sessions ordered by how long they have been idle.", params: [] },
   "agents-in-dirty-repos": { query: reportQueries.agentsInDirtyRepos, description: "Agents that work in a repository with uncommitted changes.", params: [] },
   "crowded-repos": { query: reportQueries.crowdedRepos, description: "Repositories with more than one agent, and their dirt.", params: [] },
   "idle-worktrees": { query: reportQueries.idleWorktrees, description: "Linked worktrees with no agent in them.", params: [] },
@@ -28,4 +31,6 @@ export const catalog: Readonly<Record<string, Named>> = {
   "behind-upstream-with-agents": { query: reportQueries.behindUpstreamWithAgents, description: "Repositories behind their upstream that have an agent in them.", params: [] },
   "missing-tools-with-agents": { query: reportQueries.missingToolsWithAgents, description: "Repositories with an agent where a requested tool is not installed.", params: [] },
   "tool-versions-split": { query: reportQueries.toolVersionsSplit, description: "Tools whose active version differs between repositories with an agent.", params: [] },
+  "agents-with-sessions": { query: reportQueries.agentsWithSessions, description: "Agents with the name, start time, and last activity of their session.", params: [] },
+  "sessions-without-pane": { query: reportQueries.sessionsWithoutPane, description: "Sessions alive now that herdr does not show as an agent.", params: [] },
 };

@@ -11,6 +11,9 @@ Each call uses a fresh in-memory SQLite database, so panoram keeps no cache.
 Use Node 24.10 or later.
 The build and the provider resolver use `setAuthorizer` from `node:sqlite`.
 Keep `herdr`, `ghq`, `git`, and `mise` on `PATH`.
+Keep `lsof` on `PATH` for Codex session rows.
+Keep the Claude Code and Codex session records under `~/.claude` and `~/.codex`.
+The session-to-pane join needs herdr's Claude Code and Codex integrations.
 If a provider cannot run, its tables are empty for that call.
 The result includes a `providers` row that describes the failure.
 
@@ -84,6 +87,8 @@ TSV output prints rows only and writes provider failures to standard error.
 | `repos` | Every repository ghq manages. |
 | `tools` | Every tool version mise has installed. |
 | `tools-in-dir` | The tools mise activates in one repository, by its root. |
+| `sessions` | Every Claude Code and Codex session alive now. |
+| `idle-sessions` | Sessions ordered by how long they have been idle. |
 | `agents-in-dirty-repos` | Agents that work in a repository with uncommitted changes. |
 | `crowded-repos` | Repositories with more than one agent, and their dirt. |
 | `idle-worktrees` | Linked worktrees with no agent in them. |
@@ -92,6 +97,8 @@ TSV output prints rows only and writes provider failures to standard error.
 | `behind-upstream-with-agents` | Repositories behind their upstream that have an agent in them. |
 | `missing-tools-with-agents` | Repositories with an agent where a requested tool is not installed. |
 | `tool-versions-split` | Tools whose active version differs between repositories with an agent. |
+| `agents-with-sessions` | Agents with the name, start time, and last activity of their session. |
+| `sessions-without-pane` | Sessions alive now that herdr does not show as an agent. |
 
 Agents can use [the panoram skill](skills/panoram/SKILL.md).
 The design records are in [docs](docs/README.md).

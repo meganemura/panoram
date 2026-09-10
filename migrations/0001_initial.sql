@@ -36,6 +36,21 @@ CREATE TABLE repos (
     owner text not null,
     name text not null
   ) strict;
+CREATE TABLE sessions (
+    session_id text primary key not null,
+    agent text not null,
+    pid integer,
+    cwd text not null,
+    root text,
+    name text,
+    kind text,
+    status text,
+    version text,
+    started_at integer,
+    updated_at integer,
+    last_turn_at integer,
+    last_branch text
+  ) strict;
 CREATE TABLE solarsql_assert (name text not null, ok integer not null) strict;
 CREATE TABLE tool_uses (
     id text primary key not null,

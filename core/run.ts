@@ -17,9 +17,15 @@ const execFileAsync = promisify(execFile);
 
 // The default runner. stderr is dropped: a provider that fails reports
 // through its exit code, and the error text lands in `providers.error`.
-export const exec: Exec = async (command, args, cwd) => {
-  const { stdout } = await execFileAsync(command, [...args], { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  return stdout;
+export const exec: Exec = async (command, args, cwd, options) => {
+  try {
+    const { stdout } = await execFileAsync(command, [...args], { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+    return stdout;
+  } catch (e) {
+    const failure = e as { code?: unknown; stdout?: unknown };
+    if (typeof failure.code === "number" && options?.exitCodes?.includes(failure.code) && typeof failure.stdout === "string") return failure.stdout;
+    throw e;
+  }
 };
 
 export type ProviderRow = { name: string; ok: number; observed_at: number; ms: number; error: string | null };

@@ -9,7 +9,11 @@ export type Scope = "agents" | "all";
 
 // Runs one child process and resolves with its stdout. Injectable so a
 // test can make one provider fail without stopping the real tool.
-export type Exec = (command: string, args: readonly string[], cwd?: string) => Promise<string>;
+// `exitCodes` names the exit codes that still carry an answer. lsof exits 1
+// when one of the files it was asked about is open by nobody, which is the
+// normal case for a lock directory, and its stdout is the answer anyway.
+export type ExecOptions = { exitCodes?: readonly number[] };
+export type Exec = (command: string, args: readonly string[], cwd?: string, options?: ExecOptions) => Promise<string>;
 
 export type LoadContext = {
   db: Database;
