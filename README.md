@@ -1,4 +1,4 @@
-# panoram
+# ⛰️ panoram
 
 panoram answers questions about one developer's machine: which coding agents run where and what they do, which repositories are dirty, which worktrees have nobody in them, which sessions sit idle, which tool versions a repository activates.
 It is a query layer with no data of its own.
