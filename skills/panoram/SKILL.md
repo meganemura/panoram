@@ -6,7 +6,7 @@ description: Use when an agent wants to know the state of the developer's machin
 # panoram
 
 panoram answers questions about one developer's machine.
-Each call observes the providers (herdr, git, ghq, mise, the session records) at that moment, joins them in an in-memory database, and prints rows.
+Each call observes the providers (herdr, git, ghq, mise, gh, the session records) at that moment, joins them in an in-memory database, and prints rows.
 Nothing is cached, and panoram never writes to a provider.
 
 Call it from anywhere:
@@ -26,6 +26,7 @@ The rules of the envelope, the flags, and the exit codes: [references/output.md]
 3. **When you look for a place to work**: `idle-worktrees` (a worktree with nobody in it), `dirty-unattended` (changes nobody is tending).
 4. **When a tool is missing or the wrong version**: `tools-in-dir`, `missing-tools-with-agents`, `tool-versions-split`.
 5. **When no query fits**: read the tables in [references/tables.md](references/tables.md) and ask the user to add a query file; how: [references/user-queries.md](references/user-queries.md). A user query shows up in `--help` with its description and is called like a built-in.
+6. **Before you push or open a pull request**: `prs-with-agents` for the branch you are on, then `failing-checks-with-agents`. These read GitHub and take one to three seconds. Do not use `--scope all` for this check.
 
 Every query, its parameters, and its columns: [references/queries.md](references/queries.md).
 
@@ -41,6 +42,8 @@ Every query, its parameters, and its columns: [references/queries.md](references
 | `sessions` | | Every Claude Code and Codex session alive now. |
 | `idle-sessions` | | Sessions ordered by how long they have been idle. |
 | `sessions-without-pane` | | Sessions alive now that herdr does not show as an agent. |
+| `pull-requests` | `--root` | Open pull requests of one repository. |
+| `review-requests` | | Open pull requests that request the user's review. |
 | `dirty` | | Repositories with uncommitted changes, dirtiest first. |
 | `worktrees` | `--root` | The worktrees of one repository. |
 | `repos` | | Every repository ghq manages. |
@@ -54,6 +57,9 @@ Every query, its parameters, and its columns: [references/queries.md](references
 | `tools-in-dir` | `--root` | The tools mise activates in one repository. |
 | `missing-tools-with-agents` | | Repositories with an agent where a requested tool is not installed. |
 | `tool-versions-split` | | Tools whose active version differs between repositories with an agent. |
+| `prs-with-agents` | | Agents whose branch has an open pull request, with its checks. |
+| `failing-checks-with-agents` | | Open pull requests with failing checks in repositories where an agent works. |
+| `review-requests-with-agents` | | Requested reviews, with the number of agents in that repository. |
 
 `--root` defaults to the git toplevel of the current directory.
 `--scope all` runs git and mise on every ghq repository instead of the repositories with an agent; it takes a few seconds.

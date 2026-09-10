@@ -30,11 +30,38 @@ CREATE TABLE providers (
     ms real not null,
     error text
   ) strict;
+CREATE TABLE pull_requests (
+    id text primary key not null,
+    repo text not null,
+    root text,
+    number integer not null,
+    title text not null,
+    head_branch text,
+    head_repo text,
+    base_branch text,
+    author text,
+    is_draft integer not null default 0,
+    state text not null,
+    review_decision text,
+    checks text,
+    updated_at integer not null,
+    url text not null
+  ) strict;
 CREATE TABLE repos (
     path text primary key not null,
     host text not null,
     owner text not null,
     name text not null
+  ) strict;
+CREATE TABLE review_requests (
+    id text primary key not null,
+    repo text not null,
+    root text,
+    number integer not null,
+    title text not null,
+    author text,
+    updated_at integer not null,
+    url text not null
   ) strict;
 CREATE TABLE sessions (
     session_id text primary key not null,

@@ -14,7 +14,7 @@ node cli.ts --help
 ## Requirements
 
 Node 24.10 or later, because the build and the ad hoc resolver use `setAuthorizer` of node:sqlite.
-On `PATH`: `herdr`, `git`, `ghq`, `mise`, and `lsof`.
+On `PATH`: `herdr`, `git`, `ghq`, `mise`, `gh` (logged in), and `lsof`.
 The session provider reads the records under `~/.claude` and `~/.codex`; the join between a pane and a session needs herdr's Claude Code and Codex integrations.
 A provider that is missing gives an empty table and a `providers` row that says so.
 

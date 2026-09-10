@@ -66,3 +66,15 @@ A session joins an agent through the session id herdr's integration reports; a s
 
 `source` is the path of the mise file that requested the version; a file above the repository counts.
 `active` in `tools` is relative to the directory panoram ran from.
+
+## GitHub (gh)
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `pull-requests` | `root` | `id`, `repo`, `root?`, `number`, `title`, `head_branch?`, `head_repo?`, `base_branch?`, `author?`, `is_draft`, `state`, `review_decision?`, `checks?`, `updated_at`, `url` |
+| `review-requests` | | `id`, `repo`, `root?`, `number`, `title`, `author?`, `updated_at`, `url`, ordered by `updated_at` descending |
+| `prs-with-agents` | | `pane_id`, `name?`, `status`, `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url` |
+| `failing-checks-with-agents` | | `repo`, `number`, `title`, `head_branch?`, `checks?`, `review_decision?`, `is_draft`, `url`, `agents` |
+| `review-requests-with-agents` | | `repo`, `number`, `title`, `author?`, `updated_at`, `url`, `agents` |
+
+`repo` is the `owner/name` parsed from origin. `checks` is `pass`, `fail`, `pending`, or `none`. `prs-with-agents` and `failing-checks-with-agents` match an agent's branch to a pull request whose head lives in the same repository, so a pull request from a fork does not pair with a local branch of the same name. `agents` excludes `me`. The pull request queries take 3 to 9 seconds under the default scope; `review-requests` 2 to 5.

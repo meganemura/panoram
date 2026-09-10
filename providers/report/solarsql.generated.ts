@@ -47,6 +47,18 @@ export type Generated = {
     params: {};
     row: { session_id: SessionsId; agent: string; cwd: string; root: string | null; name: string | null; kind: string | null; updated_at: number | null };
   };
+  "\n    select a.pane_id, a.name, a.status, p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url\n    from agents a join git_status g on g.root = a.root\n    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo\n    where :me is null or a.pane_id <> :me\n    order by p.repo, p.number, a.pane_id": {
+    params: { me: AgentsId | null };
+    row: { pane_id: AgentsId; name: string | null; status: string; repo: string; number: number; title: string; head_branch: string | null; checks: string | null; review_decision: string | null; is_draft: number; url: string };
+  };
+  "\n    select p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url,\n           cast(count(a.pane_id) as integer) as agents\n    from agents a join git_status g on g.root = a.root\n    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo\n    where p.checks = 'fail' and (:me is null or a.pane_id <> :me)\n    group by p.id order by p.repo, p.number": {
+    params: { me: AgentsId | null };
+    row: { repo: string; number: number; title: string; head_branch: string | null; checks: string | null; review_decision: string | null; is_draft: number; url: string; agents: number };
+  };
+  "\n    select p.repo, p.number, p.title, p.author, p.updated_at, p.url,\n           cast(count(a.pane_id) as integer) as agents\n    from review_requests p left join agents a on a.root = p.root and (:me is null or a.pane_id <> :me)\n    group by p.id order by p.updated_at desc": {
+    params: { me: AgentsId | null };
+    row: { repo: string; number: number; title: string; author: string | null; updated_at: number; url: string; agents: number };
+  };
 };
 
 export const generated: Meta<Generated> = {
@@ -60,4 +72,7 @@ export const generated: Meta<Generated> = {
   "\n    select u.tool, cast(count(distinct u.version) as integer) as versions,\n           cast(group_concat(distinct u.version) as text) as version_list\n    from tool_uses u join agents a on a.root = u.root\n    group by u.tool having count(distinct u.version) > 1 order by u.tool": { params: [], encode: [], json: [], reads: ["agents", "tool_uses"] },
   "\n    select a.pane_id, a.agent, a.status, s.name, s.kind, s.started_at, s.updated_at, s.last_turn_at, s.last_branch, a.root,\n           cast((unixepoch('subsec') * 1000 - s.updated_at) / 60000 as integer) as idle_minutes\n    from agents a join sessions s on s.session_id = a.session_id\n    where :me is null or a.pane_id <> :me\n    order by idle_minutes desc": { params: ["me"], encode: [], json: [], reads: ["agents", "sessions"] },
   "\n    select s.session_id, s.agent, s.cwd, s.root, s.name, s.kind, s.updated_at\n    from sessions s left join agents a on a.session_id = s.session_id\n    where a.pane_id is null order by s.agent, s.updated_at": { params: [], encode: [], json: [], reads: ["agents", "sessions"] },
+  "\n    select a.pane_id, a.name, a.status, p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url\n    from agents a join git_status g on g.root = a.root\n    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo\n    where :me is null or a.pane_id <> :me\n    order by p.repo, p.number, a.pane_id": { params: ["me"], encode: [], json: [], reads: ["agents", "git_status", "pull_requests"] },
+  "\n    select p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url,\n           cast(count(a.pane_id) as integer) as agents\n    from agents a join git_status g on g.root = a.root\n    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo\n    where p.checks = 'fail' and (:me is null or a.pane_id <> :me)\n    group by p.id order by p.repo, p.number": { params: ["me"], encode: [], json: [], reads: ["agents", "git_status", "pull_requests"] },
+  "\n    select p.repo, p.number, p.title, p.author, p.updated_at, p.url,\n           cast(count(a.pane_id) as integer) as agents\n    from review_requests p left join agents a on a.root = p.root and (:me is null or a.pane_id <> :me)\n    group by p.id order by p.updated_at desc": { params: ["me"], encode: [], json: [], reads: ["agents", "review_requests"] },
 };

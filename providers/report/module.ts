@@ -66,4 +66,25 @@ export const reportQueries = queries(generated, {
     select s.session_id, s.agent, s.cwd, s.root, s.name, s.kind, s.updated_at
     from sessions s left join agents a on a.session_id = s.session_id
     where a.pane_id is null order by s.agent, s.updated_at`,
+  // Agents whose current branch has an open pull request.
+  prsWithAgents: `
+    select a.pane_id, a.name, a.status, p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url
+    from agents a join git_status g on g.root = a.root
+    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo
+    where :me is null or a.pane_id <> :me
+    order by p.repo, p.number, a.pane_id`,
+  // Failed pull requests show how many agents work in their repository.
+  failingChecksWithAgents: `
+    select p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url,
+           cast(count(a.pane_id) as integer) as agents
+    from agents a join git_status g on g.root = a.root
+    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo
+    where p.checks = 'fail' and (:me is null or a.pane_id <> :me)
+    group by p.id order by p.repo, p.number`,
+  // A review request can sit outside the roots currently in scope.
+  reviewRequestsWithAgents: `
+    select p.repo, p.number, p.title, p.author, p.updated_at, p.url,
+           cast(count(a.pane_id) as integer) as agents
+    from review_requests p left join agents a on a.root = p.root and (:me is null or a.pane_id <> :me)
+    group by p.id order by p.updated_at desc`,
 });

@@ -8,6 +8,7 @@ import { miseQueries } from "./providers/mise/public.ts";
 import { repoQueries } from "./providers/repos/public.ts";
 import { reportQueries } from "./providers/report/public.ts";
 import { sessionQueries } from "./providers/sessions/public.ts";
+import { githubQueries } from "./providers/github/public.ts";
 
 export type Named = { query: Query<string, Entry>; description: string; params: readonly string[] };
 
@@ -23,6 +24,8 @@ export const catalog: Readonly<Record<string, Named>> = {
   "tools-in-dir": { query: miseQueries.inDir, description: "The tools mise activates in one repository, by its root.", params: ["root"] },
   "sessions": { query: sessionQueries.all, description: "Every Claude Code and Codex session alive now.", params: [] },
   "idle-sessions": { query: sessionQueries.idle, description: "Sessions ordered by how long they have been idle.", params: [] },
+  "pull-requests": { query: githubQueries.open, description: "Open pull requests of one repository.", params: ["root"] },
+  "review-requests": { query: githubQueries.reviewRequests, description: "Open pull requests that request the user's review.", params: [] },
   "agents-in-dirty-repos": { query: reportQueries.agentsInDirtyRepos, description: "Agents that work in a repository with uncommitted changes.", params: [] },
   "crowded-repos": { query: reportQueries.crowdedRepos, description: "Repositories with more than one agent, and their dirt.", params: [] },
   "idle-worktrees": { query: reportQueries.idleWorktrees, description: "Linked worktrees with no agent in them.", params: [] },
@@ -33,4 +36,7 @@ export const catalog: Readonly<Record<string, Named>> = {
   "tool-versions-split": { query: reportQueries.toolVersionsSplit, description: "Tools whose active version differs between repositories with an agent.", params: [] },
   "agents-with-sessions": { query: reportQueries.agentsWithSessions, description: "Agents with the name, start time, and last activity of their session.", params: [] },
   "sessions-without-pane": { query: reportQueries.sessionsWithoutPane, description: "Sessions alive now that herdr does not show as an agent.", params: [] },
+  "prs-with-agents": { query: reportQueries.prsWithAgents, description: "Agents whose branch has an open pull request, with its checks.", params: [] },
+  "failing-checks-with-agents": { query: reportQueries.failingChecksWithAgents, description: "Open pull requests with failing checks in repositories where an agent works.", params: [] },
+  "review-requests-with-agents": { query: reportQueries.reviewRequestsWithAgents, description: "Requested reviews, with the number of agents in that repository.", params: [] },
 };

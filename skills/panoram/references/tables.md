@@ -52,6 +52,16 @@ Under the default scope these hold the repositories that have an agent; under `-
 `tools`: `id` (key, `tool@version`), `tool`, `version`, `install_path?`, `installed`, `active`.
 `tool_uses`: `id` (key, `root tool`), `root`, `tool`, `version`, `source?`, `installed`. One row per root in scope and tool mise activates there.
 
+## `pull_requests` (github)
+
+`id` (key, `owner/name#number`), `repo`, `root?`, `number`, `title`, `head_branch?`, `head_repo?`, `base_branch?`, `author?`, `is_draft`, `state`, `review_decision?`, `checks?`, `updated_at`, `url`.
+The open pull requests of every repository in scope. `head_repo` is the repository the head branch lives in; it differs from `repo` for a pull request from a fork, and the joins on the branch require the two to match. `updated_at` is milliseconds since the epoch.
+
+## `review_requests` (github_reviews)
+
+`id` (key, `owner/name#number`), `repo`, `root?`, `number`, `title`, `author?`, `updated_at`, `url`.
+One search across GitHub for the pull requests that request the caller's review; `root` is null when the repository is not in scope. Its own loader, because the search costs 2 to 5 s and a query that does not read this table does not wait for it.
+
 ## `providers` (the core)
 
 `name` (key), `ok`, `observed_at`, `ms`, `error?`. One row per provider the call ran. A statement that reads only this table runs no provider.
