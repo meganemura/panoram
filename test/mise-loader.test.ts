@@ -2,6 +2,9 @@
 // per-root requirements. They use fixture output instead of a local mise
 // configuration.
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
@@ -9,7 +12,7 @@ import type { Exec, Loader } from "../core/loader.ts";
 import { runSql } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
-import { miseLoader } from "../providers/mise/loader.ts";
+import { miseConfigFilesOf, miseLoader } from "../providers/mise/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
 import { fakeExec, fixtureRepo, paths, repoForRoots } from "./fixture.ts";
 
@@ -33,16 +36,18 @@ test("mise stores global versions and requirements for every root in scope", asy
   assert.deepEqual(uses.rows, [
     { id: `${paths.alpha} node`, root: paths.alpha, tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
     { id: `${paths.alpha} ruby`, root: paths.alpha, tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", installed: 0 },
-    { id: `${paths.beta} node`, root: paths.beta, tool: "node", version: "22.1.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
-    { id: `${paths.gamma} node`, root: paths.gamma, tool: "node", version: "22.1.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
+    { id: `${paths.beta} node`, root: paths.beta, tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
+    { id: `${paths.beta} ruby`, root: paths.beta, tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", installed: 0 },
+    { id: `${paths.gamma} node`, root: paths.gamma, tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
+    { id: `${paths.gamma} ruby`, root: paths.gamma, tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", installed: 0 },
   ]);
 });
 
-test("mise skips a root that does not answer", async () => {
+test("mise skips every root in a configuration group that does not answer", async () => {
   const base = fakeExec();
   const exec: Exec = async (command, args, cwd) => {
-    if (command === "mise" && args[0] === "ls" && args[1] === "--json" && args[2] === "--current" && args[3] === "-C" && args[4] === paths.beta) {
-      throw new Error("mise failed for beta");
+    if (command === "mise" && args[0] === "ls" && args[1] === "--json" && args[2] === "--current" && args[3] === "-C" && args[4] === paths.alpha) {
+      throw new Error("mise failed for the configuration group");
     }
     return base(command, args, cwd);
   };
@@ -50,12 +55,64 @@ test("mise skips a root that does not answer", async () => {
     "select root, tool from tool_uses order by root, tool",
     { loaders, exec, repo: fixtureRepo, env: {}, scope: "agents", params: {} },
   );
-  assert.deepEqual(result.rows, [
-    { root: paths.alpha, tool: "node" },
-    { root: paths.alpha, tool: "ruby" },
-  ]);
+  assert.deepEqual(result.rows, []);
   assert.equal(result.providers.find((provider) => provider.name === "mise")?.ok, 1);
 });
+
+test("mise runs once for roots with the same configuration files", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "panoram-mise-"));
+  const sharedOne = join(directory, "repos", "one");
+  const sharedTwo = join(directory, "repos", "two");
+  const distinct = join(directory, "other");
+  const userConfig = join(directory, "user.toml");
+  mkdirSync(sharedOne, { recursive: true });
+  mkdirSync(sharedTwo, { recursive: true });
+  mkdirSync(distinct, { recursive: true });
+  writeFileSync(join(directory, "repos", "mise.toml"), "");
+  writeFileSync(join(distinct, "mise.toml"), "");
+  let currentCalls = 0;
+  const exec: Exec = async (command, args) => {
+    if (command === "herdr") return snapshotForRoots([sharedOne, sharedTwo, distinct]);
+    if (command === "ghq") return "";
+    if (command === "mise" && args.join(" ") === "ls --json") return "{}";
+    if (command === "mise" && args[2] === "--current") {
+      currentCalls += 1;
+      return JSON.stringify({ node: [{ version: "22.1.0", installed: true, active: true }] });
+    }
+    throw new Error(`unexpected command: ${command} ${args.join(" ")}`);
+  };
+  try {
+    const result = await runSql(
+      "select root, tool from tool_uses order by root, tool",
+      { loaders: loaderSet, exec, repo: repoForRoots(new Set([sharedOne, sharedTwo, distinct])), env: { MISE_CONFIG_FILE: userConfig }, scope: "agents", params: {} },
+    );
+    assert.equal(currentCalls, 2);
+    assert.deepEqual(result.rows, [
+      { root: distinct, tool: "node" },
+      { root: sharedOne, tool: "node" },
+      { root: sharedTwo, tool: "node" },
+    ]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+const miseConfigNames = ["mise.toml", ".mise.toml", "mise.local.toml", ".mise.local.toml", ".mise/config.toml", ".config/mise.toml", ".config/mise/config.toml", ".tool-versions"];
+
+test("mise configuration lookup lists existing files nearest first", () => hegel.test((tc) => {
+  const depth = tc.draw(gs.integers({ minValue: 1, maxValue: 6 }));
+  const directories = Array.from({ length: depth }, (_, index) => `/tree/${Array.from({ length: index + 1 }, (_, part) => `d${part}`).join("/")}`);
+  const existing = new Set<string>();
+  for (const directory of directories) {
+    for (const name of miseConfigNames) {
+      if (tc.draw(gs.booleans())) existing.add(join(directory, name));
+    }
+  }
+  const root = directories.at(-1)!;
+  const userConfig = "/user/config.toml";
+  const expected = directories.toReversed().flatMap((directory) => miseConfigNames.map((name) => join(directory, name)).filter((path) => existing.has(path)));
+  assert.deepEqual(miseConfigFilesOf(root, { MISE_CONFIG_FILE: userConfig }, (path) => existing.has(path)), [...expected, userConfig]);
+}));
 
 type MiseVersion = {
   version: string;
@@ -139,10 +196,11 @@ function expectedUses(current: Readonly<Record<string, MiseDocument>>): Record<s
 
 test("mise preserves generated inventories and per-root requirements", () => hegel.testAsync(async (tc) => {
   const inventory = drawDocument(tc, 1, 4);
+  const requirements = drawDocument(tc, 1, 1);
   const current = {
-    "/roots/alpha": drawDocument(tc, 1, 1),
-    "/roots/beta": drawDocument(tc, 1, 1),
-    "/roots/gamma": drawDocument(tc, 1, 1),
+    "/roots/alpha": requirements,
+    "/roots/beta": requirements,
+    "/roots/gamma": requirements,
   };
   const exec = generatedMiseExec(inventory, current);
   const tools = await runSql(

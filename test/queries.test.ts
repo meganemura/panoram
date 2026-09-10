@@ -159,10 +159,8 @@ test("report catalog queries join the fixture tables", async () => {
   ]);
   assert.deepEqual((await query("missing-tools-with-agents", "agents", { me: paneIds.alphaWorking })).rows, [
     { root: paths.alpha, tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", agents: 1 },
+    { root: paths.beta, tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", agents: 1 },
   ]);
   const split = await query("tool-versions-split");
-  assert.equal(split.rows.length, 1);
-  assert.equal(split.rows[0]?.tool, "node");
-  assert.equal(split.rows[0]?.versions, 2);
-  assert.deepEqual(String(split.rows[0]?.version_list).split(",").sort(), ["22.1.0", "24.10.0"]);
+  assert.deepEqual(split.rows, []);
 });

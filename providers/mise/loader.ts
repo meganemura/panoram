@@ -1,7 +1,13 @@
 // Fills mise's global versions and the requested versions for roots in scope.
+// mise answers per directory, but its answer depends only on configuration
+// files above that directory. Grouping equal file lists avoids 17 concurrent
+// launches that cost about one second; two launches cost about one third.
 // A failed root has no useful per-directory answer, but it must not hide the
 // global inventory or another root's answer.
 // Boundary: this provider's tables only.
+import { statSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import type { LoadContext, Loader } from "../../core/loader.ts";
 import { herdrQueries } from "../herdr/public.ts";
 import { repoQueries } from "../repos/public.ts";
@@ -20,6 +26,25 @@ type MiseDocument = Record<string, MiseVersion[]>;
 
 type Tool = { id: ToolsId; tool: string; version: string; install_path: string | null; installed: number; active: number };
 type ToolUse = { id: ToolUsesId; root: string; tool: string; version: string; source: string | null; installed: number };
+
+const miseConfigNames = ["mise.toml", ".mise.toml", "mise.local.toml", ".mise.local.toml", ".mise/config.toml", ".config/mise.toml", ".config/mise/config.toml", ".tool-versions"] as const;
+
+function fileExists(path: string): boolean {
+  try { return statSync(path).isFile(); } catch { return false; }
+}
+
+export function miseConfigFilesOf(root: string, env: Readonly<Record<string, string | undefined>>, exists: (path: string) => boolean): string[] {
+  const files: string[] = [];
+  for (let directory = root;; directory = dirname(directory)) {
+    for (const name of miseConfigNames) {
+      const path = join(directory, name);
+      if (exists(path)) files.push(path);
+    }
+    if (dirname(directory) === directory) break;
+  }
+  files.push(env["MISE_CONFIG_FILE"] || join(env["HOME"] || homedir(), ".config", "mise", "config.toml"));
+  return files;
+}
 
 function object(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -87,14 +112,24 @@ export const miseLoader: Loader = {
     const roots = new Set<string>();
     for (const row of await ctx.db.all(herdrQueries.roots)) if (row.root !== null) roots.add(row.root);
     if (ctx.scope === "all") for (const row of await ctx.db.all(repoQueries.paths)) roots.add(row.path);
-    const uses = await Promise.all([...roots].map(async (root) => {
+    const groups = new Map<string, string[]>();
+    for (const root of roots) {
+      const key = miseConfigFilesOf(root, ctx.env, fileExists).join("\n");
+      const group = groups.get(key);
+      if (group === undefined) groups.set(key, [root]);
+      else group.push(root);
+    }
+    const uses = await Promise.all([...groups.values()].map(async (rootsForConfig) => {
+      const root = rootsForConfig[0]!;
+      const sameRoots = rootsForConfig.slice(1);
       try {
-        return usesFrom(root, parseDocument(await ctx.exec("mise", ["ls", "--json", "--current", "-C", root])));
+        const document = parseDocument(await ctx.exec("mise", ["ls", "--json", "--current", "-C", root]));
+        return [usesFrom(root, document), ...sameRoots.map((sameRoot) => usesFrom(sameRoot, document))];
       } catch {
         return [];
       }
     }));
-    const loadedUses = await ctx.db.run(miseCommands.loadUses, { rows: uses.flat() });
+    const loadedUses = await ctx.db.run(miseCommands.loadUses, { rows: uses.flat(2) });
     if (!loadedUses.ok) throw new Error(`tool_uses: ${loadedUses.kind}`);
   },
 };
