@@ -6,9 +6,9 @@ Each call observes the providers at that moment, joins them in an in-memory SQLi
 It is written for a coding agent that reads a skill, and for the human who works beside it.
 
 ```sh
-node cli.ts in-dir --tsv
-node cli.ts agents-with-sessions
-node cli.ts --help
+panoram in-dir --tsv
+panoram agents-with-sessions
+panoram --help
 ```
 
 ## Requirements
