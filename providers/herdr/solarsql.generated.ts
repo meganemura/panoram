@@ -42,12 +42,12 @@ export type Generated = {
 };
 
 export const generated: Meta<Generated> = {
-  "insert into agents (pane_id, session_id, name, agent, status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)\n       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'status', value ->> 'focused',\n              value ->> 'cwd', value ->> 'foreground_cwd', value ->> 'root', value ->> 'workspace_id', value ->> 'tab_id', value ->> 'title'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [] },
-  "\n    select pane_id, name, agent, status, cwd, root, workspace_id, title\n    from agents where (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [] },
-  "\n    select pane_id, name, agent, status, cwd, title\n    from agents where root = :root and (:me is null or pane_id <> :me) order by pane_id": { params: ["root", "me"], encode: [], json: [] },
-  "\n    select pane_id, name, agent, root, cwd, title\n    from agents where status = 'working' and (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [] },
-  "\n    select workspace_id, root, cast(count(*) as integer) as agents,\n           cast(sum(status = 'working') as integer) as working\n    from agents group by workspace_id, root order by workspace_id, root": { params: [], encode: [], json: [] },
-  "select distinct root from agents where root is not null": { params: [], encode: [], json: [] },
-  "select pane_id from agents where session_id = :session_id": { params: ["session_id"], encode: [], json: [] },
-  "select pane_id from agents where focused = 1 limit 1": { params: [], encode: [], json: [] },
+  "insert into agents (pane_id, session_id, name, agent, status, focused, cwd, foreground_cwd, root, workspace_id, tab_id, title)\n       select value ->> 'pane_id', value ->> 'session_id', value ->> 'name', value ->> 'agent', value ->> 'status', value ->> 'focused',\n              value ->> 'cwd', value ->> 'foreground_cwd', value ->> 'root', value ->> 'workspace_id', value ->> 'tab_id', value ->> 'title'\n       from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: [] },
+  "\n    select pane_id, name, agent, status, cwd, root, workspace_id, title\n    from agents where (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [], reads: ["agents"] },
+  "\n    select pane_id, name, agent, status, cwd, title\n    from agents where root = :root and (:me is null or pane_id <> :me) order by pane_id": { params: ["root", "me"], encode: [], json: [], reads: ["agents"] },
+  "\n    select pane_id, name, agent, root, cwd, title\n    from agents where status = 'working' and (:me is null or pane_id <> :me) order by pane_id": { params: ["me"], encode: [], json: [], reads: ["agents"] },
+  "\n    select workspace_id, root, cast(count(*) as integer) as agents,\n           cast(sum(status = 'working') as integer) as working\n    from agents group by workspace_id, root order by workspace_id, root": { params: [], encode: [], json: [], reads: ["agents"] },
+  "select distinct root from agents where root is not null": { params: [], encode: [], json: [], reads: ["agents"] },
+  "select pane_id from agents where session_id = :session_id": { params: ["session_id"], encode: [], json: [], reads: ["agents"] },
+  "select pane_id from agents where focused = 1 limit 1": { params: [], encode: [], json: [], reads: ["agents"] },
 };

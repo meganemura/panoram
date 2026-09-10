@@ -18,6 +18,6 @@ export type Generated = {
 };
 
 export const generated: Meta<Generated> = {
-  "insert into providers (name, ok, observed_at, ms, error)\n       select value ->> 'name', value ->> 'ok', value ->> 'observed_at', value ->> 'ms', value ->> 'error' from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [] },
-  "select name, ok, observed_at, ms, error from providers order by name": { params: [], encode: [], json: [] },
+  "insert into providers (name, ok, observed_at, ms, error)\n       select value ->> 'name', value ->> 'ok', value ->> 'observed_at', value ->> 'ms', value ->> 'error' from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: [] },
+  "select name, ok, observed_at, ms, error from providers order by name": { params: [], encode: [], json: [], reads: ["providers"] },
 };

@@ -22,7 +22,7 @@
     "test": "node --test 'test/**/*.test.ts'"
   },
   "dependencies": {
-    "solarsql": "0.1.0"
+    "solarsql": "0.2.0"
   },
   "devDependencies": {
     "@hegeldev/hegel": "0.4.5",

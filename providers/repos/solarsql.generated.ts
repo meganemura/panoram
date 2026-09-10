@@ -22,7 +22,7 @@ export type Generated = {
 };
 
 export const generated: Meta<Generated> = {
-  "insert or ignore into repos (path, host, owner, name)\n       select value ->> 'path', value ->> 'host', value ->> 'owner', value ->> 'name' from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [] },
-  "select path, host, owner, name from repos order by path": { params: [], encode: [], json: [] },
-  "select path from repos": { params: [], encode: [], json: [] },
+  "insert or ignore into repos (path, host, owner, name)\n       select value ->> 'path', value ->> 'host', value ->> 'owner', value ->> 'name' from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: [] },
+  "select path, host, owner, name from repos order by path": { params: [], encode: [], json: [], reads: ["repos"] },
+  "select path from repos": { params: [], encode: [], json: [], reads: ["repos"] },
 };
