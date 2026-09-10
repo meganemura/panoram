@@ -26,3 +26,4 @@ The difference follows the git processes a call runs before gh, as `ghq list` do
 A query that reads `review_requests` pays the search alone, 2 to 5 seconds.
 `--scope all` lists 66 repositories and the skill discourages it for these queries.
 There is no rate limit handling in this version.
+The list is capped at 50 open pull requests per repository, so a repository with more can hide an older branch's pull request; the largest repository in scope had 33 on 2026-09-10.

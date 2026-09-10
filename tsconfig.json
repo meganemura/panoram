@@ -11,6 +11,6 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", ".claude-team"]
+  "include": ["*.ts", "core/**/*.ts", "providers/**/*.ts", "migrations/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
 }
