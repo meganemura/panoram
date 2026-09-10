@@ -24,7 +24,7 @@ The rules of the envelope, the flags, and the exit codes: [references/output.md]
 
 ## Workflow
 
-1. **Before you start work in a repository**: `in-dir` (who else is here), `crowded-repos`, `dirty` and `behind-upstream-with-agents` (what state the checkout is in). The rows exclude your own pane.
+1. **Before you start work in a repository**: `in-dir` (who else is here), `crowded-repos`, `dirty` and `behind-upstream-with-agents` (what state the checkout is in). The rows exclude your own pane. As a gate: `panoram in-dir --expect-empty --strict` exits 0 only when nobody else is here and every provider answered.
 2. **When the user asks what is going on**: `agents-with-sessions` (names, idle time), `working`, `idle-sessions`, `workspaces`.
 3. **When you look for a place to work**: `idle-worktrees` (a worktree with nobody in it), `dirty-unattended` (changes nobody is tending).
 4. **When a tool is missing or the wrong version**: `tools-in-dir`, `missing-tools-with-agents`, `tool-versions-split`.
@@ -38,7 +38,7 @@ Every query, its parameters, and its columns: [references/queries.md](references
 
 ## Queries
 
-The table lists the queries the workflow names. Every query, with its parameters and columns, is in [references/queries.md](references/queries.md); `--help` lists them all, most used first.
+The table lists the queries the workflow names. Every query, with its parameters and columns, is in [references/queries.md](references/queries.md); `--help` lists them all, most used first. `--help --json` gives the list as data.
 
 | Query | Parameter | Answers |
 | --- | --- | --- |

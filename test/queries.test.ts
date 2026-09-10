@@ -3,14 +3,41 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { catalog } from "../catalog.ts";
-import type { Scope } from "../core/loader.ts";
+import type { Loader, Scope } from "../core/loader.ts";
 import { runQuery } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
-import { fakeExec, fixtureRepo, paneIds, paths } from "./fixture.ts";
+import { sessionCommands } from "../providers/sessions/module.ts";
+import type { SessionsId } from "../providers/sessions/solarsql.generated.ts";
+import { fakeExec, fixtureRepo, paneIds, paths, sessionIds } from "./fixture.ts";
+
+const sessionFixtureLoader: Loader = {
+  name: "sessions",
+  tables: ["sessions", "claude_sessions", "codex_sessions"],
+  after: [],
+  async load(ctx) {
+    const recorded = await ctx.db.run(sessionCommands.load, {
+      rows: [{
+        session_id: sessionIds.alphaWorking as SessionsId,
+        agent: "claude",
+        pid: null,
+        cwd: paths.alpha,
+        root: paths.alpha,
+        name: "session needle",
+        started_at: null,
+        updated_at: null,
+        last_turn_at: null,
+        last_branch: null,
+      }],
+    });
+    if (!recorded.ok) throw new Error(`sessions: ${recorded.kind}`);
+  },
+};
+
+const fixtureLoaders = loaders.map((loader) => loader.name === "sessions" ? sessionFixtureLoader : loader);
 
 async function query(name: keyof typeof catalog, scope: Scope = "agents", params: Record<string, unknown> = {}) {
   return runQuery(catalog[name]!.query, {
-    loaders,
+    loaders: fixtureLoaders,
     exec: fakeExec(),
     repo: fixtureRepo,
     env: {},
@@ -86,6 +113,51 @@ test("agent catalog queries use repository roots and exclude the focused caller"
     { workspace_id: "workspace-beta", root: paths.beta, agents: 1, working: 1 },
     { workspace_id: "workspace-scratch", root: null, agents: 1, working: 0 },
   ]);
+});
+
+test("find matches an agent name, title, root, session name, or no agent", async () => {
+  const find = async (q: string) => (await query("find", "agents", { q, me: null })).rows;
+  assert.deepEqual(await find("Alpha working"), [{
+    pane_id: paneIds.alphaWorking,
+    agent: "claude",
+    agent_status: "working",
+    name: "Alpha working",
+    title: "alpha working",
+    root: paths.alpha,
+    cwd: paths.alpha,
+    session_name: "session needle",
+  }]);
+  assert.deepEqual(await find("alpha idle"), [{
+    pane_id: paneIds.alphaIdle,
+    agent: "claude",
+    agent_status: "idle",
+    name: null,
+    title: "alpha idle",
+    root: paths.alpha,
+    cwd: paths.alphaSubdirectory,
+    session_name: null,
+  }]);
+  assert.deepEqual(await find(paths.beta), [{
+    pane_id: paneIds.betaWorking,
+    agent: "claude",
+    agent_status: "working",
+    name: "Beta working",
+    title: "beta working",
+    root: paths.beta,
+    cwd: paths.beta,
+    session_name: null,
+  }]);
+  assert.deepEqual(await find("session needle"), [{
+    pane_id: paneIds.alphaWorking,
+    agent: "claude",
+    agent_status: "working",
+    name: "Alpha working",
+    title: "alpha working",
+    root: paths.alpha,
+    cwd: paths.alpha,
+    session_name: "session needle",
+  }]);
+  assert.deepEqual(await find("not in this fixture"), []);
 });
 
 test("repository catalog queries preserve their ordered rows", async () => {

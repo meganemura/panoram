@@ -7,6 +7,13 @@ import { queries } from "solarsql";
 import { generated } from "./solarsql.generated.ts";
 
 export const reportQueries = queries(generated, {
+  // An agent can be identified by a pane field or by the session it holds.
+  find: `
+    select a.pane_id, a.agent, a.agent_status, a.name, a.title, a.root, a.cwd, s.name as session_name
+    from agents a left join sessions s on s.session_id = a.session_id
+    where (:me is null or a.pane_id <> :me)
+      and (a.name like '%' || :q || '%' or a.title like '%' || :q || '%' or a.root like '%' || :q || '%' or a.cwd like '%' || :q || '%' or s.name like '%' || :q || '%')
+    order by a.pane_id`,
   // Agents that work in a repository with uncommitted changes.
   agentsInDirtyRepos: `
     select a.pane_id, a.name, a.agent_status, a.root, g.branch, g.dirty_count, g.untracked_count

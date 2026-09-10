@@ -84,6 +84,7 @@ test("tablesRead finds every catalog query's declared tables", () => {
   try {
     const expected: Record<keyof typeof catalog, string[]> = {
       agents: ["agents"],
+      find: ["agents", "sessions"],
       "in-dir": ["agents"],
       working: ["agents"],
       workspaces: ["agents"],

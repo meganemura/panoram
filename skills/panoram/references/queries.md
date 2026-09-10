@@ -9,6 +9,7 @@ Columns marked `?` can be null.
 | Query | Parameters | Columns |
 | --- | --- | --- |
 | `agents` | | `pane_id`, `name?`, `agent`, `agent_status`, `cwd`, `root?`, `workspace_id?`, `title?` |
+| `find` | `q` | `pane_id`, `agent`, `agent_status`, `name?`, `title?`, `root?`, `cwd`, `session_name?` |
 | `in-dir` | `root` | `pane_id`, `name?`, `agent`, `agent_status`, `cwd`, `title?` |
 | `working` | | `pane_id`, `name?`, `agent`, `agent_status`, `root?`, `cwd`, `title?` |
 | `workspaces` | | `workspace_id?`, `root?`, `agents`, `working?` |
@@ -16,7 +17,7 @@ Columns marked `?` can be null.
 `agent` is the label herdr detected (`claude`, `codex`, ...).
 `agent_status` is herdr's field and uses herdr's values: `working`, `idle`, `blocked`, `unknown`.
 `root` is null for an agent outside any repository.
-`agents`, `in-dir`, and `working` exclude `me`.
+`agents`, `find`, `in-dir`, and `working` exclude `me`.
 
 ## Sessions (Claude Code, Codex)
 

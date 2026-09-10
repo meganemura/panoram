@@ -44,8 +44,10 @@ Times are milliseconds since the epoch (`observed_at`, `started_at`, `updated_at
 | `--me PANE` | The pane to exclude. Default: the caller's own pane, from `HERDR_PANE_ID`, then `CLAUDE_CODE_SESSION_ID` matched to a session, then the pane herdr has in focus. `--me ""` keeps every pane. |
 | `--tsv` | Rows only, tab separated. |
 | `--json` | The default. |
-| `--<name> VALUE` | A parameter of a user query, bound as text. |
-| `--help` | The built-in and user queries, with descriptions, ordered by call count. |
+| `--<name> VALUE` | A parameter of a built-in or user query, bound as text. |
+| `--expect-empty` | Exit 3 after output when the query returned rows. |
+| `--strict` | Exit 4 after output when a provider did not answer. |
+| `--help` | The built-in and user queries, with descriptions, ordered by call count. `--help --json` prints their names, descriptions, parameters, and sources as JSON. |
 
 panoram records call counts in `$XDG_STATE_HOME/panoram/calls.jsonl`, or `~/.local/state/panoram/calls.jsonl` when the variable is unset.
 
@@ -56,6 +58,8 @@ panoram records call counts in `$XDG_STATE_HOME/panoram/calls.jsonl`, or `~/.loc
 | 0 | The query ran. A failed provider does not change the code; read `providers`. |
 | 1 | The statement did not run: a missing parameter, a statement that does not prepare. The message is one line on standard error. |
 | 2 | Usage: an unknown query name, a bad `--scope`, no query given. |
+| 3 | `--expect-empty` and the query returned rows. |
+| 4 | `--strict` and a provider did not answer. |
 
 ## Self
 

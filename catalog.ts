@@ -18,6 +18,7 @@ export type Named = { query: Query<string, Entry>; description: string; params: 
 
 export const catalog: Readonly<Record<string, Named>> = {
   "agents": { query: herdrQueries.all, description: "Every agent herdr hosts, with its repository root.", params: [] },
+  "find": { query: reportQueries.find, description: "Agents whose name, title, repository, or session name contains a word.", params: ["q"] },
   "in-dir": { query: herdrQueries.inDir, description: "The agents in one repository, by its root.", params: ["root"] },
   "working": { query: herdrQueries.working, description: "The agents that work right now.", params: [] },
   "workspaces": { query: herdrQueries.workspaces, description: "Which workspace holds agents of which repository.", params: [] },
