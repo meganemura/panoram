@@ -103,6 +103,15 @@ test("repository catalog queries preserve their ordered rows", async () => {
     { path: paths.beta, host: "github.com", owner: "o", name: "beta" },
     { path: paths.gamma, host: "github.com", owner: "o", name: "gamma" },
   ]);
+  assert.deepEqual((await query("tools")).rows, [
+    { tool: "node", version: "22.1.0", install_path: "/home/u/.local/share/mise/installs/node/22.1.0", installed: 1, active: 1 },
+    { tool: "node", version: "24.10.0", install_path: "/home/u/.local/share/mise/installs/node/24.10.0", installed: 1, active: 0 },
+    { tool: "ruby", version: "4.0.6", install_path: null, installed: 0, active: 0 },
+  ]);
+  assert.deepEqual((await query("tools-in-dir", "agents", { root: paths.alpha })).rows, [
+    { tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
+    { tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", installed: 0 },
+  ]);
 });
 
 test("report catalog queries join the fixture tables", async () => {
@@ -144,4 +153,15 @@ test("report catalog queries join the fixture tables", async () => {
   assert.deepEqual((await query("behind-upstream-with-agents", "agents", { me: paneIds.alphaWorking })).rows, [
     { root: paths.alpha, branch: "main", upstream: "origin/main", behind: 3, ahead: 2, agents: 1 },
   ]);
+  assert.deepEqual((await query("missing-tools-with-agents")).rows, [
+    { root: paths.alpha, tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", agents: 2 },
+  ]);
+  assert.deepEqual((await query("missing-tools-with-agents", "agents", { me: paneIds.alphaWorking })).rows, [
+    { root: paths.alpha, tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", agents: 1 },
+  ]);
+  const split = await query("tool-versions-split");
+  assert.equal(split.rows.length, 1);
+  assert.equal(split.rows[0]?.tool, "node");
+  assert.equal(split.rows[0]?.versions, 2);
+  assert.deepEqual(String(split.rows[0]?.version_list).split(",").sort(), ["22.1.0", "24.10.0"]);
 });

@@ -16,3 +16,4 @@ Each ADR describes one decision and its consequences.
 | [0009](adr/0009-provider-freshness-envelope.md) | The envelope carries provider freshness. |
 | [0010](adr/0010-ad-hoc-sql-for-people.md) | Ad hoc SQL is for a person at a shell. |
 | [0011](adr/0011-single-regenerated-migration.md) | The schema uses one regenerated migration. |
+| [0012](adr/0012-mise-provider.md) | mise is the fourth provider. |

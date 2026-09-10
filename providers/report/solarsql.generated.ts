@@ -30,6 +30,14 @@ export type Generated = {
     params: { me: AgentsId | null };
     row: { root: GitStatusId; branch: string | null; upstream: string | null; behind: number; ahead: number; agents: number };
   };
+  "\n    select u.root, u.tool, u.version, u.source, cast(count(a.pane_id) as integer) as agents\n    from tool_uses u join agents a on a.root = u.root\n    where u.installed = 0 and (:me is null or a.pane_id <> :me)\n    group by u.root, u.tool, u.version, u.source order by u.root, u.tool": {
+    params: { me: AgentsId | null };
+    row: { root: string; tool: string; version: string; source: string | null; agents: number };
+  };
+  "\n    select u.tool, cast(count(distinct u.version) as integer) as versions,\n           cast(group_concat(distinct u.version) as text) as version_list\n    from tool_uses u join agents a on a.root = u.root\n    group by u.tool having count(distinct u.version) > 1 order by u.tool": {
+    params: {};
+    row: { tool: string; versions: number; version_list: string | null };
+  };
 };
 
 export const generated: Meta<Generated> = {
@@ -39,4 +47,6 @@ export const generated: Meta<Generated> = {
   "\n    select a.pane_id, a.name, a.status, a.cwd, a.root from agents a\n    left join repos r on r.path = a.root\n    where r.path is null and (:me is null or a.pane_id <> :me) order by a.pane_id": { params: ["me"], encode: [], json: [], reads: ["agents", "repos"] },
   "\n    select g.root, g.branch, g.dirty_count, g.untracked_count from git_status g\n    left join agents a on a.root = g.root\n    where a.pane_id is null and g.dirty_count > 0 order by g.dirty_count desc, g.root": { params: [], encode: [], json: [], reads: ["agents", "git_status"] },
   "\n    select g.root, g.branch, g.upstream, g.behind, g.ahead,\n           cast(count(a.pane_id) as integer) as agents\n    from git_status g join agents a on a.root = g.root\n    where g.behind > 0 and (:me is null or a.pane_id <> :me)\n    group by g.root order by g.behind desc, g.root": { params: ["me"], encode: [], json: [], reads: ["agents", "git_status"] },
+  "\n    select u.root, u.tool, u.version, u.source, cast(count(a.pane_id) as integer) as agents\n    from tool_uses u join agents a on a.root = u.root\n    where u.installed = 0 and (:me is null or a.pane_id <> :me)\n    group by u.root, u.tool, u.version, u.source order by u.root, u.tool": { params: ["me"], encode: [], json: [], reads: ["agents", "tool_uses"] },
+  "\n    select u.tool, cast(count(distinct u.version) as integer) as versions,\n           cast(group_concat(distinct u.version) as text) as version_list\n    from tool_uses u join agents a on a.root = u.root\n    group by u.tool having count(distinct u.version) > 1 order by u.tool": { params: [], encode: [], json: [], reads: ["agents", "tool_uses"] },
 };

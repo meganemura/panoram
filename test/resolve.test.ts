@@ -13,7 +13,7 @@ import { migrate } from "solarsql/node";
 
 const tablePool = Array.from({ length: 16 }, (_, index) => `t${index}`);
 const undeclaredTableNames = ["undeclared0", "undeclared1", "undeclared2"];
-const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "providers"];
+const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "providers"];
 
 type LoaderGraph = {
   loaders: Loader[];
@@ -90,12 +90,16 @@ test("tablesRead finds every catalog query's declared tables", () => {
       dirty: ["git_status"],
       worktrees: ["worktrees"],
       repos: ["repos"],
+      tools: ["tools"],
+      "tools-in-dir": ["tool_uses"],
       "agents-in-dirty-repos": ["agents", "git_status"],
       "crowded-repos": ["agents", "git_status"],
       "idle-worktrees": ["agents", "worktrees"],
       "agents-outside-ghq": ["agents", "repos"],
       "dirty-unattended": ["agents", "git_status"],
       "behind-upstream-with-agents": ["agents", "git_status"],
+      "missing-tools-with-agents": ["agents", "tool_uses"],
+      "tool-versions-split": ["agents", "tool_uses"],
     };
     for (const [name, named] of Object.entries(catalog) as [keyof typeof catalog, (typeof catalog)[keyof typeof catalog]][]) {
       assert.deepEqual(tablesRead(raw, named.query.sql).sort(), expected[name]);

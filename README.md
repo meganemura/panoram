@@ -10,7 +10,7 @@ Each call uses a fresh in-memory SQLite database, so panoram keeps no cache.
 
 Use Node 24.10 or later.
 The build and the provider resolver use `setAuthorizer` from `node:sqlite`.
-Keep `herdr`, `ghq`, and `git` on `PATH`.
+Keep `herdr`, `ghq`, `git`, and `mise` on `PATH`.
 If a provider cannot run, its tables are empty for that call.
 The result includes a `providers` row that describes the failure.
 
@@ -82,12 +82,16 @@ TSV output prints rows only and writes provider failures to standard error.
 | `dirty` | Repositories with uncommitted changes, dirtiest first. |
 | `worktrees` | The worktrees of one repository, by its root. |
 | `repos` | Every repository ghq manages. |
+| `tools` | Every tool version mise has installed. |
+| `tools-in-dir` | The tools mise activates in one repository, by its root. |
 | `agents-in-dirty-repos` | Agents that work in a repository with uncommitted changes. |
 | `crowded-repos` | Repositories with more than one agent, and their dirt. |
 | `idle-worktrees` | Linked worktrees with no agent in them. |
 | `agents-outside-ghq` | Agents whose repository is not one ghq manages, or no repository at all. |
 | `dirty-unattended` | Repositories with uncommitted changes and no agent. |
 | `behind-upstream-with-agents` | Repositories behind their upstream that have an agent in them. |
+| `missing-tools-with-agents` | Repositories with an agent where a requested tool is not installed. |
+| `tool-versions-split` | Tools whose active version differs between repositories with an agent. |
 
 Agents can use [the panoram skill](skills/panoram/SKILL.md).
 The design records are in [docs](docs/README.md).

@@ -10,10 +10,11 @@ import type { Loader } from "./core/loader.ts";
 import { loader as repoLoader } from "./providers/repos/public.ts";
 import { loader as herdrLoader } from "./providers/herdr/public.ts";
 import { loader as gitLoader } from "./providers/git/public.ts";
+import { loader as miseLoader } from "./providers/mise/public.ts";
 
-export const loaders: readonly Loader[] = [repoLoader, herdrLoader, gitLoader];
+export const loaders: readonly Loader[] = [repoLoader, herdrLoader, gitLoader, miseLoader];
 
 export default config({
-  modules: ["./core/providers", "./providers/repos", "./providers/herdr", "./providers/git", { dir: "./providers/report", readsAll: true }],
+  modules: ["./core/providers", "./providers/repos", "./providers/herdr", "./providers/git", "./providers/mise", { dir: "./providers/report", readsAll: true }],
   migrations: "./migrations",
 });

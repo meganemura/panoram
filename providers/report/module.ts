@@ -42,4 +42,16 @@ export const reportQueries = queries(generated, {
     from git_status g join agents a on a.root = g.root
     where g.behind > 0 and (:me is null or a.pane_id <> :me)
     group by g.root order by g.behind desc, g.root`,
+  // Repositories with an agent and a requested version that is absent.
+  missingToolsWithAgents: `
+    select u.root, u.tool, u.version, u.source, cast(count(a.pane_id) as integer) as agents
+    from tool_uses u join agents a on a.root = u.root
+    where u.installed = 0 and (:me is null or a.pane_id <> :me)
+    group by u.root, u.tool, u.version, u.source order by u.root, u.tool`,
+  // Tool versions that differ between roots where an agent is present.
+  toolVersionsSplit: `
+    select u.tool, cast(count(distinct u.version) as integer) as versions,
+           cast(group_concat(distinct u.version) as text) as version_list
+    from tool_uses u join agents a on a.root = u.root
+    group by u.tool having count(distinct u.version) > 1 order by u.tool`,
 });

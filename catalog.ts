@@ -4,6 +4,7 @@
 import type { Entry, Query } from "solarsql";
 import { herdrQueries } from "./providers/herdr/public.ts";
 import { gitQueries } from "./providers/git/public.ts";
+import { miseQueries } from "./providers/mise/public.ts";
 import { repoQueries } from "./providers/repos/public.ts";
 import { reportQueries } from "./providers/report/public.ts";
 
@@ -17,10 +18,14 @@ export const catalog: Readonly<Record<string, Named>> = {
   "dirty": { query: gitQueries.dirty, description: "Repositories with uncommitted changes, dirtiest first.", params: [] },
   "worktrees": { query: gitQueries.worktreesOf, description: "The worktrees of one repository, by its root.", params: ["root"] },
   "repos": { query: repoQueries.all, description: "Every repository ghq manages.", params: [] },
+  "tools": { query: miseQueries.installed, description: "Every tool version mise has installed.", params: [] },
+  "tools-in-dir": { query: miseQueries.inDir, description: "The tools mise activates in one repository, by its root.", params: ["root"] },
   "agents-in-dirty-repos": { query: reportQueries.agentsInDirtyRepos, description: "Agents that work in a repository with uncommitted changes.", params: [] },
   "crowded-repos": { query: reportQueries.crowdedRepos, description: "Repositories with more than one agent, and their dirt.", params: [] },
   "idle-worktrees": { query: reportQueries.idleWorktrees, description: "Linked worktrees with no agent in them.", params: [] },
   "agents-outside-ghq": { query: reportQueries.agentsOutsideGhq, description: "Agents whose repository is not one ghq manages, or no repository at all.", params: [] },
   "dirty-unattended": { query: reportQueries.dirtyUnattended, description: "Repositories with uncommitted changes and no agent.", params: [] },
   "behind-upstream-with-agents": { query: reportQueries.behindUpstreamWithAgents, description: "Repositories behind their upstream that have an agent in them.", params: [] },
+  "missing-tools-with-agents": { query: reportQueries.missingToolsWithAgents, description: "Repositories with an agent where a requested tool is not installed.", params: [] },
+  "tool-versions-split": { query: reportQueries.toolVersionsSplit, description: "Tools whose active version differs between repositories with an agent.", params: [] },
 };

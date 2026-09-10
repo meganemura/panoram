@@ -22,12 +22,16 @@ Use `panoram <query>` when the package bin is linked.
 | `dirty` | None | Lists repositories with uncommitted changes. |
 | `worktrees` | `--root DIR` | Lists worktrees for one repository. |
 | `repos` | None | Lists repositories that ghq manages. |
+| `tools` | None | Lists every tool version mise has installed. |
+| `tools-in-dir` | `--root DIR` | Lists the tools mise activates in one repository. |
 | `agents-in-dirty-repos` | None | Lists agents in dirty repositories. |
 | `crowded-repos` | None | Lists repositories with more than one agent. |
 | `idle-worktrees` | None | Lists linked worktrees without an agent. |
 | `agents-outside-ghq` | None | Lists agents outside repositories that ghq manages. |
 | `dirty-unattended` | None | Lists dirty repositories without an agent. |
 | `behind-upstream-with-agents` | None | Lists repositories behind upstream with an agent. |
+| `missing-tools-with-agents` | None | Lists repositories with an agent where a requested tool is not installed. |
+| `tool-versions-split` | None | Lists tools whose active version differs between repositories with an agent. |
 
 JSON output has `query`, `scope`, `me`, `rows`, and `providers`.
 Each provider row has `name`, `ok`, `observed_at`, `ms`, and `error`.

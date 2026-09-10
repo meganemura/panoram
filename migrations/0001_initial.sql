@@ -37,6 +37,22 @@ CREATE TABLE repos (
     name text not null
   ) strict;
 CREATE TABLE solarsql_assert (name text not null, ok integer not null) strict;
+CREATE TABLE tool_uses (
+    id text primary key not null,
+    root text not null,
+    tool text not null,
+    version text not null,
+    source text,
+    installed integer not null
+  ) strict;
+CREATE TABLE tools (
+    id text primary key not null,
+    tool text not null,
+    version text not null,
+    install_path text,
+    installed integer not null,
+    active integer not null
+  ) strict;
 CREATE TABLE worktrees (
     path text primary key not null,
     repo_root text not null,

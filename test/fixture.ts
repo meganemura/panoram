@@ -172,8 +172,44 @@ export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr
     if (command === "git" && invocation === "rev-parse --show-toplevel") return rootFor(cwd);
     if (command === "git" && invocation === "worktree list --porcelain") return worktreesFor(cwd);
     if (command === "git" && invocation === "status --porcelain=2 --branch") return statusFor(cwd);
+    if (command === "mise" && invocation === "ls --json") return miseInventory();
+    if (command === "mise" && args[0] === "ls" && args[1] === "--json" && args[2] === "--current" && args[3] === "-C" && args[4] !== undefined) {
+      return miseCurrent(args[4]);
+    }
     throw new Error(`unexpected fake command: ${command} ${invocation} in ${cwd ?? ""}`);
   };
+}
+
+function miseInventory(): string {
+  return JSON.stringify({
+    node: [
+      { version: "22.1.0", install_path: "/home/u/.local/share/mise/installs/node/22.1.0", installed: true, active: true },
+      { version: "24.10.0", install_path: "/home/u/.local/share/mise/installs/node/24.10.0", installed: true, active: false },
+    ],
+    ruby: [{ version: "4.0.6", installed: false, active: false }],
+  });
+}
+
+function miseCurrent(root: string): string {
+  const config = "/home/u/.config/mise/config.toml";
+  const group = "/home/u/src/github.com/o/mise.toml";
+  if (root === paths.alpha || root === paths.alphaWorktree) {
+    return JSON.stringify({
+      node: [{ version: "24.10.0", installed: true, active: true, source: { type: "mise.toml", path: config } }],
+      ruby: [{ version: "4.0.6", installed: false, active: true, source: { type: "mise.toml", path: group } }],
+    });
+  }
+  if (root === paths.beta) {
+    return JSON.stringify({
+      node: [{ version: "22.1.0", installed: true, active: true, source: { type: "mise.toml", path: config } }],
+    });
+  }
+  if (root === paths.gamma) {
+    return JSON.stringify({
+      node: [{ version: "22.1.0", installed: true, active: true, source: { type: "mise.toml", path: config } }],
+    });
+  }
+  throw new Error(`unknown mise root: ${root}`);
 }
 
 function rootFor(cwd: string | undefined): string {
