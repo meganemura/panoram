@@ -7,25 +7,70 @@
 // provider that failed goes to stderr.
 // Boundary: parsing arguments and printing. core/run.ts does the work.
 import { execFileSync } from "node:child_process";
-import { parseArgs } from "node:util";
+import { dirname } from "node:path";
+import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { catalog } from "./catalog.ts";
-import { runQuery, runSql, type ProviderRow } from "./core/run.ts";
+import { runQuery, runSql, type ProviderRow, type RunResult } from "./core/run.ts";
+import { loadUserQueries, type UserQuery } from "./core/user-queries.ts";
 import { loaders } from "./panoram.config.ts";
 
-function usage(): string {
-  const width = Math.max(...Object.keys(catalog).map((k) => k.length));
-  const lines = Object.entries(catalog).map(([name, q]) => `  ${name.padEnd(width)}  ${q.description}${q.params.length ? `  (--${q.params.join(", --")})` : ""}`);
+const commandOptions = new Set(["root", "scope", "me", "sql", "json", "tsv", "help"]);
+
+function usage(userQueries: readonly UserQuery[]): string {
+  const width = Math.max(...[...Object.keys(catalog), ...userQueries.map((query) => query.name)].map((name) => name.length));
+  const lines = Object.entries(catalog).map(([name, query]) => queryLine(name, query.description, query.params, width));
+  const userLines = userQueries.map((query) => queryLine(query.name, query.description, query.params, width));
   return [
     "usage: panoram <query> [--root DIR] [--scope agents|all] [--me PANE] [--json|--tsv]",
     "       panoram --sql <text> [--root DIR] [--me PANE] [--scope agents|all] [--json|--tsv]",
     "",
     "queries:",
     ...lines,
+    ...(userQueries.length === 0 ? [] : ["", `user queries (${dirname(userQueries[0]!.path)}):`, ...userLines]),
     "",
     "--scope agents (default) runs git on the repositories that have an agent; all runs it on every ghq repository.",
     "--root defaults to the git toplevel of the current directory.",
     "--me excludes one pane; by default the caller's own pane, found from the environment.",
   ].join("\n");
+}
+
+function queryLine(name: string, description: string, params: readonly string[], width: number): string {
+  return `  ${name.padEnd(width)}  ${description}${params.length ? `  (--${params.join(", --")})` : ""}`;
+}
+
+function optionsFor(userQueries: readonly UserQuery[]): ParseArgsOptionsConfig {
+  // SQL permits parameter names that also name inherited JavaScript properties.
+  const options: ParseArgsOptionsConfig = Object.create(null);
+  options["root"] = { type: "string" };
+  options["scope"] = { type: "string" };
+  options["me"] = { type: "string" };
+  options["sql"] = { type: "string" };
+  options["json"] = { type: "boolean" };
+  options["tsv"] = { type: "boolean" };
+  options["help"] = { type: "boolean", short: "h" };
+  for (const query of userQueries) {
+    for (const parameter of query.params) {
+      if (!Object.hasOwn(options, parameter)) options[parameter] = { type: "string" };
+    }
+  }
+  return options;
+}
+
+function textOption(values: Record<string, unknown>, name: string): string | undefined {
+  const value = values[name];
+  if (value === undefined) return undefined;
+  if (typeof value === "string") return value;
+  throw new Error(`--${name} needs a value`);
+}
+
+function validateUserOptions(values: Record<string, unknown>, userQueries: readonly UserQuery[], parameters: readonly string[], name: string): void {
+  const accepted = new Set(parameters);
+  const discovered = new Set(userQueries.flatMap((query) => query.params));
+  for (const parameter of discovered) {
+    if (!commandOptions.has(parameter) && values[parameter] !== undefined && !accepted.has(parameter)) {
+      throw new Error(`query ${name} does not take --${parameter}`);
+    }
+  }
 }
 
 // The toplevel of a directory, or the directory itself when git refuses.
@@ -49,50 +94,65 @@ function warn(providers: ProviderRow[]): void {
 }
 
 async function main(argv: string[]): Promise<number> {
+  const userQueries = loadUserQueries(process.env);
   const { values, positionals } = parseArgs({
     args: argv,
-    options: {
-      root: { type: "string" },
-      scope: { type: "string", default: "agents" },
-      me: { type: "string" },
-      sql: { type: "string" },
-      json: { type: "boolean", default: false },
-      tsv: { type: "boolean", default: false },
-      help: { type: "boolean", short: "h", default: false },
-    },
+    options: optionsFor(userQueries),
     allowPositionals: true,
   });
-  if (values.help || (positionals.length === 0 && values.sql === undefined)) {
-    console.log(usage());
-    return values.help ? 0 : 2;
+  const sql = textOption(values, "sql");
+  const root = textOption(values, "root");
+  const scope = textOption(values, "scope") ?? "agents";
+  const me = textOption(values, "me");
+  const help = values["help"] === true;
+  const requestedName = positionals[0];
+  const userQuery = sql === undefined && requestedName !== undefined
+    ? userQueries.find((query) => query.name === requestedName)
+    : undefined;
+  validateUserOptions(values, userQueries, userQuery?.params ?? [], requestedName ?? "sql");
+  if (help || (positionals.length === 0 && sql === undefined)) {
+    console.log(usage(userQueries));
+    return help ? 0 : 2;
   }
-  if (values.scope !== "agents" && values.scope !== "all") {
-    console.error(`panoram: --scope is agents or all, not ${values.scope}`);
+  if (scope !== "agents" && scope !== "all") {
+    console.error(`panoram: --scope is agents or all, not ${scope}`);
     return 2;
   }
-  const scope = values.scope;
-  const params: Record<string, unknown> = {};
-  if (values.me !== undefined) params["me"] = values.me === "" ? null : values.me;
+  // Keep the same parameter names intact when the CLI passes them to SQLite.
+  const params: Record<string, unknown> = Object.create(null);
+  if (me !== undefined) params["me"] = me === "" ? null : me;
 
   let name: string;
-  let result;
-  if (values.sql !== undefined) {
+  let result: RunResult<Record<string, unknown>>;
+  if (sql !== undefined) {
     name = "sql";
     // The two flags are the two parameters a statement can name. Any other
     // `:name` is an error from the core.
-    if (/:root\b/.test(values.sql)) params["root"] = toplevel(values.root ?? process.cwd());
-    result = await runSql(values.sql, { loaders, scope, params });
+    if (/:root\b/.test(sql)) params["root"] = toplevel(root ?? process.cwd());
+    result = await runSql(sql, { loaders, scope, params });
   } else {
-    name = positionals[0]!;
+    name = requestedName!;
     const named = catalog[name];
-    if (!named) {
-      console.error(`panoram: no query named ${name}\n\n${usage()}`);
+    if (!named && !userQuery) {
+      console.error(`panoram: no query named ${name}\n\n${usage(userQueries)}`);
       return 2;
     }
-    if (named.params.includes("root")) params["root"] = toplevel(values.root ?? process.cwd());
-    result = await runQuery(named.query, { loaders, scope, params });
+    if (userQuery) {
+      if (userQuery.params.includes("root")) params["root"] = toplevel(root ?? process.cwd());
+      for (const parameter of userQuery.params) {
+        if (parameter === "root" || parameter === "me") continue;
+        const value = textOption(values, parameter);
+        if (value !== undefined) params[parameter] = value;
+      }
+      result = await runSql(userQuery.sql, { loaders, scope, params });
+    } else if (named) {
+      if (named.params.includes("root")) params["root"] = toplevel(root ?? process.cwd());
+      result = await runQuery(named.query, { loaders, scope, params });
+    } else {
+      throw new Error(`no query named ${name}`);
+    }
   }
-  if (values.tsv) {
+  if (values["tsv"] === true) {
     process.stdout.write(tsv(result.rows));
     warn(result.providers);
   } else {

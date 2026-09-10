@@ -33,6 +33,9 @@ Use `panoram <query>` when the package bin is linked.
 | `missing-tools-with-agents` | None | Lists repositories with an agent where a requested tool is not installed. |
 | `tool-versions-split` | None | Lists tools whose active version differs between repositories with an agent. |
 
+User queries appear in `--help` with their descriptions.
+An agent can call a user query like a built-in query.
+
 JSON output has `query`, `scope`, `me`, `rows`, and `providers`.
 Each provider row has `name`, `ok`, `observed_at`, `ms`, and `error`.
 Read `ok` and `observed_at` before you trust `rows`.

@@ -46,9 +46,13 @@ export async function runQuery<Q extends Query<string, Entry>>(query: Q, options
   return run(query.meta.reads, [...query.meta.params], (db, params) => db.all(query, params as never), options);
 }
 
+export function sqlParameterNames(sql: string): string[] {
+  return [...new Set([...sql.matchAll(/:([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((match) => match[1]!))];
+}
+
 // Ad hoc SQL. Parameters bind by the names the statement uses.
 export async function runSql(sql: string, options: RunOptions): Promise<RunResult<Record<string, unknown>>> {
-  const names = [...new Set([...sql.matchAll(/:([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((m) => m[1]!))];
+  const names = sqlParameterNames(sql);
   return run((raw) => tablesRead(raw, sql), names, (_db, params, raw) => {
     const statement = raw.prepare(sql);
     const bound = Object.fromEntries(names.map((n) => [n, params[n] ?? null]));

@@ -33,7 +33,7 @@ panoram --help
 
 | Argument | Purpose |
 | --- | --- |
-| `<query>` | Runs a named query from the catalog. |
+| `<query>` | Runs a built-in query or a user query. |
 | `--sql <text>` | Runs ad hoc SQL for a person at a shell. `:root` and `:me` in the text bind from the flags. |
 | `--scope agents\|all` | Selects the repository scope. `agents` is the default. |
 | `--root DIR` | Sets the repository for a query that takes `root`. The default is the Git top level of the current directory. panoram uses the directory if Git cannot resolve a top level. |
@@ -95,6 +95,23 @@ TSV output prints rows only and writes provider failures to standard error.
 
 Agents can use [the panoram skill](skills/panoram/SKILL.md).
 The design records are in [docs](docs/README.md).
+
+## Your own queries
+
+Put one SQL file for each query in `$XDG_CONFIG_HOME/panoram/queries/`.
+When `XDG_CONFIG_HOME` is unset, panoram uses `~/.config/panoram/queries/`.
+The file name without `.sql` is the query name and must match `[a-z][a-z0-9-]*`.
+
+```sql
+-- Repositories on one branch.
+select root, branch
+from git_status where branch = :branch
+```
+
+Call this query with `panoram <name> --branch <value>`.
+panoram binds each flag value as text.
+`:root` and `:me` keep the same defaults as built-in queries.
+Built-in names win, so panoram skips a file that has the same name as a built-in query.
 
 ## License
 
