@@ -1,12 +1,31 @@
 {
   "name": "panoram",
   "version": "0.0.0",
-  "description": "Reserved.",
+  "description": "A query layer over the state of one developer's machine: agents, repositories, worktrees.",
   "license": "MIT",
   "author": "meganemura",
   "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24.10.0"
+  },
+  "bin": {
+    "panoram": "./cli.ts"
+  },
   "files": [
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "scripts": {
+    "build": "solarsql build panoram.config.ts",
+    "check": "solarsql build --check panoram.config.ts && tsc --noEmit",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "solarsql": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "typescript": "7.0.2"
+  }
 }
