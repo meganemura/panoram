@@ -65,7 +65,8 @@ async function repoRootsOf(ctx: LoadContext): Promise<Map<string, string>> {
   const rootRepos = new Map<string, string>();
   await Promise.all([...roots].map(async (root) => {
     try {
-      const repo = parseGithubOrigin(await ctx.exec("git", ["remote", "get-url", "origin"], root));
+      const origin = await ctx.repo.originOf(root);
+      const repo = origin === null ? null : parseGithubOrigin(origin);
       if (repo !== null) rootRepos.set(root, repo);
     } catch { /* A root without origin does not identify a GitHub repository. */ }
   }));

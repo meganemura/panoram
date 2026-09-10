@@ -12,9 +12,9 @@ Provider joins need one shared value.
 
 ## Decision
 
-The herdr loader resolves each agent directory with `git rev-parse --show-toplevel`.
+The herdr loader resolves each agent directory in-process by walking to the nearest `.git` entry.
 It stores the result as `root`.
-Each distinct directory takes 14 ms, and the calls run concurrently.
+It handles both checkout directories and linked-worktree `.git` files.
 Every provider join uses `root`.
 A checkout that ghq creates has the same path string as its Git root.
 

@@ -9,7 +9,7 @@ import { runSql } from "../core/run.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { parseElapsed, parseLsof, processesLoader } from "../providers/processes/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
-import { fakeExec, paths } from "./fixture.ts";
+import { fakeExec, fixtureRepo, paths } from "./fixture.ts";
 
 const loaders: Loader[] = [repoLoader, herdrLoader, processesLoader];
 
@@ -39,12 +39,12 @@ function processExec(): Exec {
 }
 
 test("processes join ps to cwd, filter to roots, and retain outside listeners", async () => {
-  const result = await runSql("select pid, executable, cwd, root, elapsed_s from processes order by pid", { loaders, exec: processExec(), env: {}, params: {} });
+  const result = await runSql("select pid, executable, cwd, root, elapsed_s from processes order by pid", { loaders, exec: processExec(), repo: fixtureRepo, env: {}, params: {} });
   assert.deepEqual(result.rows, [
     { pid: 101, executable: "node", cwd: `${paths.alpha}/app`, root: paths.alpha, elapsed_s: 62 },
     { pid: 103, executable: "vitest", cwd: paths.beta, root: paths.beta, elapsed_s: 93784 },
   ]);
-  const listeners = await runSql("select pid, address, port, cwd, root, command from listeners order by pid, address", { loaders, exec: processExec(), env: {}, params: {} });
+  const listeners = await runSql("select pid, address, port, cwd, root, command from listeners order by pid, address", { loaders, exec: processExec(), repo: fixtureRepo, env: {}, params: {} });
   assert.deepEqual(listeners.rows, [
     { pid: 101, address: "*", port: 3000, cwd: `${paths.alpha}/app`, root: paths.alpha, command: "/usr/local/bin/node server.js" },
     { pid: 101, address: "[::1]", port: 3000, cwd: `${paths.alpha}/app`, root: paths.alpha, command: "/usr/local/bin/node server.js" },
@@ -53,7 +53,7 @@ test("processes join ps to cwd, filter to roots, and retain outside listeners", 
 });
 
 test("processes include ghq roots only under the all scope", async () => {
-  const result = await runSql("select pid, root from processes order by pid", { loaders, exec: processExec(), env: {}, scope: "all", params: {} });
+  const result = await runSql("select pid, root from processes order by pid", { loaders, exec: processExec(), repo: fixtureRepo, env: {}, scope: "all", params: {} });
   assert.deepEqual(result.rows, [
     { pid: 101, root: paths.alpha },
     { pid: 103, root: paths.beta },

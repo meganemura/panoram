@@ -6,12 +6,13 @@ import { catalog } from "../catalog.ts";
 import type { Scope } from "../core/loader.ts";
 import { runQuery } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
-import { fakeExec, paneIds, paths } from "./fixture.ts";
+import { fakeExec, fixtureRepo, paneIds, paths } from "./fixture.ts";
 
 async function query(name: keyof typeof catalog, scope: Scope = "agents", params: Record<string, unknown> = {}) {
   return runQuery(catalog[name]!.query, {
     loaders,
     exec: fakeExec(),
+    repo: fixtureRepo,
     env: {},
     scope,
     params,

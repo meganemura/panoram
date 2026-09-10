@@ -19,12 +19,12 @@ The cause was not identified.
 ## Decision
 
 A loader runs after the loaders its `after` names.
-Independent loaders keep the order of the module list in `panoram.config.ts`, and that list places repos before herdr.
-The per-root git calls run concurrently.
+Independent loaders keep the order of the module list in `panoram.config.ts`.
+The configuration puts loaders that start ghq, gh, mise, and bd before loaders that start many git or lsof processes.
+On 2026-09-11, 18 concurrent file-opening processes delayed the next large non-Apple binary by about two seconds.
 
 ## Consequences
 
-A default-scope call spends about 0.8 s in the loaders: repos 240 ms, herdr 240 ms, git 280 ms.
-The same call with herdr before repos spent 2.2 s.
+A default-scope call puts its large executable launches before later process bursts.
 Under `--scope all` git takes 1.4 s for 66 repositories.
 A change to the module list changes the order independent loaders run in.

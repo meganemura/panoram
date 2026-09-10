@@ -11,14 +11,14 @@ import { loaders } from "../panoram.config.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { miseLoader } from "../providers/mise/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
-import { fakeExec, paths } from "./fixture.ts";
+import { fakeExec, fixtureRepo, paths, repoForRoots } from "./fixture.ts";
 
 const loaderSet: Loader[] = [repoLoader, herdrLoader, miseLoader];
 
 test("mise stores global versions and requirements for every root in scope", async () => {
   const inventory = await runSql(
     "select id, tool, version, install_path, installed, active from tools order by tool, version",
-    { loaders, exec: fakeExec(), env: {}, scope: "all", params: {} },
+    { loaders, exec: fakeExec(), repo: fixtureRepo, env: {}, scope: "all", params: {} },
   );
   assert.deepEqual(inventory.rows, [
     { id: "node@22.1.0", tool: "node", version: "22.1.0", install_path: "/home/u/.local/share/mise/installs/node/22.1.0", installed: 1, active: 1 },
@@ -28,7 +28,7 @@ test("mise stores global versions and requirements for every root in scope", asy
 
   const uses = await runSql(
     "select id, root, tool, version, source, installed from tool_uses order by root, tool",
-    { loaders, exec: fakeExec(), env: {}, scope: "all", params: {} },
+    { loaders, exec: fakeExec(), repo: fixtureRepo, env: {}, scope: "all", params: {} },
   );
   assert.deepEqual(uses.rows, [
     { id: `${paths.alpha} node`, root: paths.alpha, tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
@@ -48,7 +48,7 @@ test("mise skips a root that does not answer", async () => {
   };
   const result = await runSql(
     "select root, tool from tool_uses order by root, tool",
-    { loaders, exec, env: {}, scope: "agents", params: {} },
+    { loaders, exec, repo: fixtureRepo, env: {}, scope: "agents", params: {} },
   );
   assert.deepEqual(result.rows, [
     { root: paths.alpha, tool: "node" },
@@ -106,7 +106,6 @@ function generatedMiseExec(inventory: MiseDocument, current: Readonly<Record<str
     const invocation = args.join(" ");
     if (command === "herdr" && invocation === "api snapshot") return snapshotForRoots(Object.keys(current));
     if (command === "ghq" && invocation === "list -p") return "";
-    if (command === "git" && invocation === "rev-parse --show-toplevel") return cwd ?? "";
     if (command === "mise" && invocation === "ls --json") return JSON.stringify(inventory);
     if (command === "mise" && args[0] === "ls" && args[1] === "--json" && args[2] === "--current" && args[3] === "-C" && args[4] !== undefined) {
       const document = current[args[4]];
@@ -148,13 +147,13 @@ test("mise preserves generated inventories and per-root requirements", () => heg
   const exec = generatedMiseExec(inventory, current);
   const tools = await runSql(
     "select id, tool, version, install_path, installed, active from tools order by tool, version",
-    { loaders: loaderSet, exec, env: {}, scope: "agents", params: {} },
+    { loaders: loaderSet, exec, repo: repoForRoots(new Set(Object.keys(current))), env: {}, scope: "agents", params: {} },
   );
   assert.deepEqual(tools.rows, expectedTools(inventory));
 
   const uses = await runSql(
     "select id, root, tool, version, source, installed from tool_uses order by root, tool",
-    { loaders: loaderSet, exec, env: {}, scope: "agents", params: {} },
+    { loaders: loaderSet, exec, repo: repoForRoots(new Set(Object.keys(current))), env: {}, scope: "agents", params: {} },
   );
   assert.deepEqual(uses.rows, expectedUses(current));
 }));

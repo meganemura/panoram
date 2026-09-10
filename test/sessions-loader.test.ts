@@ -10,6 +10,7 @@ import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import type { Exec } from "../core/loader.ts";
+import type { Repo } from "../core/repo.ts";
 import { runSql } from "../core/run.ts";
 import { sessionsLoader, parseTranscriptTail } from "../providers/sessions/loader.ts";
 
@@ -68,6 +69,10 @@ async function fixtureHome(): Promise<string> {
   return home;
 }
 
+function fixtureRepo(): Repo {
+  return { rootOf: async (cwd) => cwd === claudeCwd ? "/roots/claude" : cwd === codexCwd ? "/roots/codex" : null, originOf: async () => null };
+}
+
 function execFor(home: string, options: { failCodex?: boolean } = {}): Exec {
   const lock = join(home, ".codex", "thread-writer-locks", `${codexId}.lock`);
   return async (command, args, cwd) => {
@@ -75,7 +80,6 @@ function execFor(home: string, options: { failCodex?: boolean } = {}): Exec {
       if (options.failCodex) throw new Error("lsof failed");
       return `p${process.pid}\nn${lock}\n`;
     }
-    if (command === "git" && args.join(" ") === "rev-parse --show-toplevel") return cwd === claudeCwd ? "/roots/claude\n" : "/roots/codex\n";
     throw new Error(`unexpected command: ${command}`);
   };
 }
@@ -85,7 +89,7 @@ test("sessions loads live Claude Code and Codex rows from bounded records", asyn
   try {
     const result = await runSql(
       "select session_id, agent, pid, cwd, root, name, kind, status, version, started_at, updated_at, last_turn_at, last_branch from sessions order by agent",
-      { loaders: [sessionsLoader], exec: execFor(home), env: { HOME: home }, params: {} },
+      { loaders: [sessionsLoader], exec: execFor(home), repo: fixtureRepo(), env: { HOME: home }, params: {} },
     );
     assert.deepEqual(result.rows, [
       { session_id: claudeId, agent: "claude", pid: process.pid, cwd: claudeCwd, root: "/roots/claude", name: "Claude session", kind: "interactive", status: "idle", version: "2.1.0", started_at: 1000, updated_at: 2000, last_turn_at: Date.parse("2026-09-10T00:00:00.000Z"), last_branch: "main" },
@@ -101,7 +105,7 @@ test("sessions keeps Claude rows when the Codex source fails", async () => {
   const home = await fixtureHome();
   try {
     const result = await runSql("select session_id, agent from sessions order by agent", {
-      loaders: [sessionsLoader], exec: execFor(home, { failCodex: true }), env: { HOME: home }, params: {},
+      loaders: [sessionsLoader], exec: execFor(home, { failCodex: true }), repo: fixtureRepo(), env: { HOME: home }, params: {},
     });
     assert.deepEqual(result.rows, [{ session_id: claudeId, agent: "claude" }]);
     assert.deepEqual(result.providers.map(({ name, ok, error }) => ({ name, ok, error })), [{ name: "sessions", ok: 0, error: "codex: lsof failed" }]);

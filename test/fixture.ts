@@ -3,6 +3,7 @@
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import type { Exec } from "../core/loader.ts";
+import type { Repo } from "../core/repo.ts";
 
 export const paths = {
   alpha: "/home/u/src/github.com/o/alpha",
@@ -160,6 +161,36 @@ export function generatedSnapshot(agents: readonly GeneratedSnapshotAgent[]): st
   return JSON.stringify({ result: { snapshot: { agents } } });
 }
 
+const origins = new Map<string, string>([
+  [paths.alpha, "git@github.com:example/alpha.git"],
+  [paths.alphaWorktree, "git@github.com:example/alpha.git"],
+  [paths.beta, "https://github.com/example/beta"],
+]);
+
+export function fixtureRepoWithOrigins(values: ReadonlyMap<string, string> = origins): Repo {
+  return {
+    async rootOf(cwd) {
+      try {
+        return rootFor(cwd);
+      } catch {
+        return null;
+      }
+    },
+    async originOf(root) {
+      return values.get(root) ?? null;
+    },
+  };
+}
+
+export const fixtureRepo = fixtureRepoWithOrigins();
+
+export function repoForRoots(roots: ReadonlySet<string>): Repo {
+  return {
+    async rootOf(cwd) { return roots.has(cwd) ? cwd : null; },
+    async originOf() { return null; },
+  };
+}
+
 export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr?: boolean } = {}): Exec {
   const agents = options.agents ?? fixtureAgents();
   return async (command, args, cwd) => {
@@ -169,7 +200,6 @@ export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr
       return snapshot(agents);
     }
     if (command === "ghq" && invocation === "list -p") return `${paths.alpha}\n${paths.beta}\n${paths.gamma}\n`;
-    if (command === "git" && invocation === "rev-parse --show-toplevel") return rootFor(cwd);
     if (command === "git" && invocation === "worktree list --porcelain") return worktreesFor(cwd);
     if (command === "git" && invocation === "status --porcelain=2 --branch") return statusFor(cwd);
     if (command === "mise" && invocation === "ls --json") return miseInventory();
@@ -213,7 +243,7 @@ function miseCurrent(root: string): string {
 }
 
 function rootFor(cwd: string | undefined): string {
-  if (cwd === paths.alpha || cwd === paths.alphaSubdirectory) return paths.alpha;
+  if (cwd === paths.alpha || cwd?.startsWith(`${paths.alpha}/`)) return paths.alpha;
   if (cwd === paths.alphaWorktree) return paths.alphaWorktree;
   if (cwd === paths.beta) return paths.beta;
   throw new Error(`not a repository: ${cwd ?? ""}`);

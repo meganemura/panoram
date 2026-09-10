@@ -1,9 +1,9 @@
 // The one list of providers: a provider is in `modules` for its tables and
 // in `loaders` for its code. The build can import this file because solarsql
 // writes the generated stubs before it imports anything.
-// Independent loaders run in the order of `loaders`. repos sits before herdr
-// because `ghq list` is slow right after git ran in many repositories
-// (ADR 0008).
+// Independent loaders run in the order of `loaders`. Loaders that start ghq,
+// gh, mise, or bd run before git and lsof bursts because 18 such launches
+// delay the next large binary by about two seconds (ADR 0008).
 // Boundary: the list only. A provider's tables and code live in its module.
 import { config } from "solarsql";
 import type { Loader } from "./core/loader.ts";
@@ -18,7 +18,7 @@ import { loader as skillsLoader } from "./providers/skills/public.ts";
 import { loader as beadsLoader } from "./providers/beads/public.ts";
 import { loader as headsignLoader } from "./providers/headsign/public.ts";
 
-export const loaders: readonly Loader[] = [repoLoader, herdrLoader, gitLoader, miseLoader, sessionsLoader, githubLoader, githubReviewsLoader, processesLoader, skillsLoader, beadsLoader, headsignLoader];
+export const loaders: readonly Loader[] = [repoLoader, herdrLoader, githubLoader, githubReviewsLoader, miseLoader, beadsLoader, sessionsLoader, gitLoader, processesLoader, skillsLoader, headsignLoader];
 
 export default config({
   modules: ["./core/providers", "./providers/repos", "./providers/herdr", "./providers/git", "./providers/mise", "./providers/sessions", "./providers/github", "./providers/processes", "./providers/skills", "./providers/beads", "./providers/headsign", { dir: "./providers/report", readsAll: true }],

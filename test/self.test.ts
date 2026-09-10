@@ -9,7 +9,7 @@ import type { Exec } from "../core/loader.ts";
 import { runQuery } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
-import { drawSnapshotAgents, generatedAgentCwds, generatedSnapshot, fakeExec, fixtureAgents, paneIds, sessionIds } from "./fixture.ts";
+import { drawSnapshotAgents, fixtureRepo, generatedAgentCwds, generatedSnapshot, fakeExec, fixtureAgents, paneIds, repoForRoots, sessionIds } from "./fixture.ts";
 
 const generatedRoots = new Map<string, string>([
   [generatedAgentCwds[0], "/root/a"],
@@ -20,6 +20,7 @@ async function agents(options: { env: Readonly<Record<string, string | undefined
   return runQuery(catalog.agents!.query, {
     loaders,
     exec: fakeExec({ agents: options.noFocusedAgent ? fixtureAgents({ focusedPaneId: null }) : fixtureAgents() }),
+    repo: fixtureRepo,
     env: options.env,
     scope: "agents",
     params: options.params ?? {},
@@ -34,11 +35,6 @@ function generatedHerdrFixture(snapshot: string): Exec {
   return async (command, args, cwd) => {
     const invocation = args.join(" ");
     if (command === "herdr" && invocation === "api snapshot") return snapshot;
-    if (command === "git" && invocation === "rev-parse --show-toplevel") {
-      const root = generatedRoots.get(cwd ?? "");
-      if (root) return root;
-      throw new Error(`not a repository: ${cwd ?? ""}`);
-    }
     throw new Error(`unexpected fake command: ${command} ${invocation} in ${cwd ?? ""}`);
   };
 }
@@ -98,6 +94,7 @@ test("self discovery follows pane, session, and focus precedence", () => hegel.t
   const result = await runQuery(catalog.agents!.query, {
     loaders: [herdrLoader],
     exec: generatedHerdrFixture(generatedSnapshot(snapshotAgents)),
+    repo: { rootOf: async (cwd) => generatedRoots.get(cwd) ?? null, originOf: async () => null },
     env,
     scope: "agents",
     params: {},

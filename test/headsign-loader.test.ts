@@ -12,6 +12,7 @@ import { runSql } from "../core/run.ts";
 import { headsignLoader } from "../providers/headsign/loader.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
+import { repoForRoots } from "./fixture.ts";
 
 const home = mkdtempSync(join(tmpdir(), "panoram-headsign-"));
 const alpha = join(home, "src", "github.com", "example", "alpha");
@@ -33,21 +34,20 @@ function execFor(roots: readonly string[]): Exec {
   return async (command, args, cwd) => {
     if (command === "ghq" && args.join(" ") === "list -p") return "";
     if (command === "herdr" && args.join(" ") === "api snapshot") return JSON.stringify({ result: { snapshot: { agents: roots.map((root, index) => ({ pane_id: `example:${index}`, agent: "claude", agent_status: "working", cwd: root })) } } });
-    if (command === "git" && args.join(" ") === "rev-parse --show-toplevel") return cwd ?? "";
     throw new Error(`unexpected fake command: ${command} ${args.join(" ")}`);
   };
 }
 
 test("headsign loads rows and skips an absent state file", async () => {
   writeState(alpha, state());
-  const result = await runSql("select root, workflow, phase, total_iterations, attempts from workflow_runs order by root", { loaders, exec: execFor([alpha, beta]), params: {} });
+  const result = await runSql("select root, workflow, phase, total_iterations, attempts from workflow_runs order by root", { loaders, exec: execFor([alpha, beta]), repo: repoForRoots(new Set([alpha, beta])), params: {} });
   assert.deepEqual(result.rows, [{ root: alpha, workflow: "example", phase: "build", total_iterations: 3, attempts: '{"build":2}' }]);
 });
 
 test("headsign names a broken root after it inserts valid rows", async () => {
   writeState(alpha, state());
   writeState(gamma, "not JSON");
-  const result = await runSql("select root from workflow_runs", { loaders, exec: execFor([alpha, gamma]), params: {} });
+  const result = await runSql("select root from workflow_runs", { loaders, exec: execFor([alpha, gamma]), repo: repoForRoots(new Set([alpha, gamma])), params: {} });
   assert.deepEqual(result.rows, [{ root: alpha }]);
   const provider = result.providers.find((row) => row.name === "headsign");
   assert.equal(provider?.ok, 0);
@@ -60,7 +60,7 @@ test("headsign preserves generated state objects", () => hegel.testAsync(async (
   const failure = tc.draw(gs.optional(gs.just({ reason: "example" })));
   const input = state({ status: tc.draw(gs.sampledFrom(["running", "complete", "blocked"] as const)), phase: tc.draw(gs.optional(gs.sampledFrom(["build", "review", "done"] as const))), attempts, total_iterations: tc.draw(gs.integers({ minValue: 0, maxValue: 1000 })), ...(failure === null ? {} : { last_failure: failure }) });
   writeState(propertyRoot, input);
-  const result = await runSql("select status, phase, attempts, total_iterations, last_failure from workflow_runs", { loaders, exec: execFor([propertyRoot]), params: {} });
+  const result = await runSql("select status, phase, attempts, total_iterations, last_failure from workflow_runs", { loaders, exec: execFor([propertyRoot]), repo: repoForRoots(new Set([propertyRoot])), params: {} });
   const row = result.rows[0]!;
   assert.equal(row.status, input.status);
   assert.equal(row.phase, input.phase ?? null);

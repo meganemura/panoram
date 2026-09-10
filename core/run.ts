@@ -11,6 +11,7 @@ import { migrate, node } from "solarsql/node";
 import { migrations } from "../migrations/index.ts";
 import { providerCommands, providerQueries, type ProvidersId } from "./providers/public.ts";
 import type { Exec, Loader, Scope } from "./loader.ts";
+import { fsRepo, type Repo } from "./repo.ts";
 import { loadersFor, tablesRead } from "./resolve.ts";
 
 const execFileAsync = promisify(execFile);
@@ -35,6 +36,7 @@ export type RunOptions = {
   scope?: Scope;
   exec?: Exec;
   env?: Readonly<Record<string, string | undefined>>;
+  repo?: Repo;
   // Parameters for the statement. `me` is filled by the core when the
   // statement names it and the caller did not pass it.
   params?: Record<string, unknown>;
@@ -70,7 +72,7 @@ async function run<R>(tables: readonly string[] | ((raw: DatabaseSync) => readon
   const raw = new DatabaseSync(":memory:");
   migrate(raw, migrations);
   const db = node(raw);
-  const ctx = { db, exec: options.exec ?? exec, scope: options.scope ?? "agents", env: options.env ?? process.env };
+  const ctx = { db, exec: options.exec ?? exec, scope: options.scope ?? "agents", env: options.env ?? process.env, repo: options.repo ?? fsRepo };
   const needed = loadersFor(options.loaders, typeof tables === "function" ? tables(raw) : tables);
   const providers: ProviderRow[] = [];
   // Loaders run in dependency order, one at a time. A failed loader leaves

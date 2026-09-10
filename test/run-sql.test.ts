@@ -6,7 +6,7 @@ import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import { runSql } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
-import { fakeExec, paths } from "./fixture.ts";
+import { fakeExec, fixtureRepo, paths } from "./fixture.ts";
 
 function providerNames(result: { providers: { name: string }[] }): string[] {
   return result.providers.map((provider) => provider.name);
@@ -33,6 +33,7 @@ test("SQL that reads agents runs herdr only", async () => {
   const result = await runSql("select root from agents order by root", {
     loaders,
     exec: fakeExec(),
+    repo: fixtureRepo,
     env: {},
     scope: "agents",
     params: {},

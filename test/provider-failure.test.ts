@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { catalog } from "../catalog.ts";
 import { runQuery } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
-import { fakeExec } from "./fixture.ts";
+import { fakeExec, fixtureRepo } from "./fixture.ts";
 
 function providerFacts(rows: { name: string; ok: number; error: string | null }[]): { name: string; ok: number; error: string | null }[] {
   return rows.map(({ name, ok, error }) => ({ name, ok, error }));
@@ -15,6 +15,7 @@ test("a failed herdr still lets dependent providers record their result", async 
   const result = await runQuery(catalog["agents-in-dirty-repos"]!.query, {
     loaders,
     exec: fakeExec({ failHerdr: true }),
+    repo: fixtureRepo,
     env: {},
     scope: "agents",
     params: {},
@@ -32,6 +33,7 @@ test("agents records only the failed herdr provider", async () => {
   const result = await runQuery(catalog.agents!.query, {
     loaders,
     exec: fakeExec({ failHerdr: true }),
+    repo: fixtureRepo,
     env: {},
     scope: "agents",
     params: {},

@@ -1,5 +1,5 @@
-// Fills `agents` from `herdr api snapshot`. One `git rev-parse
-// --show-toplevel` per distinct cwd gives `root`; a cwd outside a
+// Fills `agents` from `herdr api snapshot`. One filesystem root lookup per
+// distinct cwd gives `root`; a cwd outside a
 // repository gets null and stays in the table, because "agents outside any
 // repository" is a question too.
 // Boundary: this provider's tables only.
@@ -21,14 +21,6 @@ type SnapshotAgent = {
   terminal_title_stripped?: string | null;
 };
 
-async function rootOf(ctx: LoadContext, cwd: string): Promise<string | null> {
-  try {
-    return (await ctx.exec("git", ["rev-parse", "--show-toplevel"], cwd)).trim();
-  } catch {
-    return null;
-  }
-}
-
 export const herdrLoader: Loader = {
   name: "herdr",
   tables: ["agents"],
@@ -37,7 +29,7 @@ export const herdrLoader: Loader = {
     const out = await ctx.exec("herdr", ["api", "snapshot"]);
     const agents = JSON.parse(out).result.snapshot.agents as SnapshotAgent[];
     const cwds = [...new Set(agents.map((a) => a.cwd))];
-    const roots = new Map(await Promise.all(cwds.map(async (cwd) => [cwd, await rootOf(ctx, cwd)] as const)));
+    const roots = new Map(await Promise.all(cwds.map(async (cwd) => [cwd, await ctx.repo.rootOf(cwd)] as const)));
     const rows = agents.map((a) => ({
       pane_id: a.pane_id as AgentsId,
       session_id: a.agent_session?.value ?? null,

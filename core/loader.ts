@@ -4,6 +4,7 @@
 // answer stays in the provider.
 // Boundary: types only. run.ts schedules; a provider's loader.ts loads.
 import type { Database } from "solarsql";
+import type { Repo } from "./repo.ts";
 
 export type Scope = "agents" | "all";
 
@@ -20,6 +21,7 @@ export type LoadContext = {
   exec: Exec;
   scope: Scope;
   env: Readonly<Record<string, string | undefined>>;
+  repo: Repo;
 };
 
 export type Loader = {

@@ -15,7 +15,7 @@ The GitHub key is the origin repository, not the ghq path.
 ## Decision
 
 The github provider owns two tables with a loader each: `pull_requests`, one `gh pr list` per distinct repository in scope, and `review_requests`, one `gh search prs` for the caller's requested reviews.
-Each loader parses the origin of every root in scope; a root whose origin is not on GitHub has no rows.
+Each loader reads the origin of every root in scope from its Git config file; a root whose origin is not on GitHub has no rows.
 A pull request keeps the repository its head branch lives in, so a join on the branch name pairs an agent only with a pull request from the same repository, not with one from a fork.
 It summarizes checks as `pass`, `fail`, `pending`, or `none`.
 

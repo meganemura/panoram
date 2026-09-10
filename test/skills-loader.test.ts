@@ -12,6 +12,7 @@ import { runSql } from "../core/run.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
 import { readFrontmatter, skillsLoader, splitPluginId } from "../providers/skills/loader.ts";
+import { repoForRoots } from "./fixture.ts";
 
 const home = mkdtempSync(join(tmpdir(), "panoram-skills-"));
 const root = join(home, "src", "github.com", "example", "project");
@@ -52,14 +53,13 @@ const loaders: Loader[] = [repoLoader, herdrLoader, skillsLoader];
 const exec: Exec = async (command, args, cwd) => {
   if (command === "ghq" && args.join(" ") === "list -p") return "";
   if (command === "herdr" && args.join(" ") === "api snapshot") return snapshot();
-  if (command === "git" && args.join(" ") === "rev-parse --show-toplevel" && cwd === root) return root;
   throw new Error(`unexpected fake command: ${command} ${args.join(" ")}`);
 };
 
 setup();
 
 test("skills load every source and keep the project root", async () => {
-  const result = await runSql("select source, agent, name, root from skills order by source, name", { loaders, exec, env: { HOME: home }, params: {} });
+  const result = await runSql("select source, agent, name, root from skills order by source, name", { loaders, exec, repo: repoForRoots(new Set([root])), env: { HOME: home }, params: {} });
   assert.deepEqual(result.rows, [
     { source: "claude-plugin", agent: "claude", name: "claude-plugin", root: null },
     { source: "claude-project", agent: "claude", name: "project", root },
@@ -71,7 +71,7 @@ test("skills load every source and keep the project root", async () => {
 });
 
 test("Claude's installed registry excludes a stale cache skill", async () => {
-  const result = await runSql("select name from skills where source = 'claude-plugin' order by name", { loaders, exec, env: { HOME: home }, params: {} });
+  const result = await runSql("select name from skills where source = 'claude-plugin' order by name", { loaders, exec, repo: repoForRoots(new Set([root])), env: { HOME: home }, params: {} });
   assert.deepEqual(result.rows, [{ name: "claude-plugin" }]);
 });
 

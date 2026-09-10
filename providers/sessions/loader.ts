@@ -89,14 +89,6 @@ function isAlive(pid: number): boolean {
   }
 }
 
-async function rootOf(ctx: LoadContext, cwd: string): Promise<string | null> {
-  try {
-    return (await ctx.exec("git", ["rev-parse", "--show-toplevel"], cwd)).trim();
-  } catch {
-    return null;
-  }
-}
-
 function claudeSlug(cwd: string): string {
   return cwd.replace(/[/.]/g, "-");
 }
@@ -196,7 +188,7 @@ export const sessionsLoader: Loader = {
     if (!home) throw new Error("sessions: HOME is not set");
     const [claude, codex] = await Promise.allSettled([loadClaude(home), loadCodex(ctx, home)]);
     const loaded = [claude, codex].flatMap((result) => result.status === "fulfilled" ? result.value : []);
-    const roots = new Map(await Promise.all([...new Set(loaded.map((row) => row.cwd))].map(async (cwd) => [cwd, await rootOf(ctx, cwd)] as const)));
+    const roots = new Map(await Promise.all([...new Set(loaded.map((row) => row.cwd))].map(async (cwd) => [cwd, await ctx.repo.rootOf(cwd)] as const)));
     for (const row of loaded) row.root = roots.get(row.cwd) ?? null;
     const inserted = await ctx.db.run(sessionCommands.load, { rows: loaded });
     if (!inserted.ok) throw new Error(`sessions: ${inserted.kind}`);

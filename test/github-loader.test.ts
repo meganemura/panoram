@@ -9,18 +9,13 @@ import { runSql } from "../core/run.ts";
 import { githubLoader, githubReviewsLoader, parseGithubOrigin, summarizeChecks } from "../providers/github/loader.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
-import { fakeExec, fixtureAgentsWithLinkedWorktree, paths } from "./fixture.ts";
+import { fakeExec, fixtureAgentsWithLinkedWorktree, fixtureRepo, fixtureRepoWithOrigins, paths } from "./fixture.ts";
 
 const loaders: Loader[] = [repoLoader, herdrLoader, githubLoader, githubReviewsLoader];
 
 function githubExec(options: { nonGithub?: boolean; failGh?: boolean } = {}): Exec {
   const base = fakeExec({ agents: fixtureAgentsWithLinkedWorktree() });
   return async (command, args, cwd) => {
-    if (command === "git" && args.join(" ") === "remote get-url origin") {
-      if (cwd === paths.alpha || cwd === paths.alphaWorktree) return "git@github.com:example/alpha.git\n";
-      if (cwd === paths.beta) return options.nonGithub ? "https://gitlab.com/example/beta.git\n" : "https://github.com/example/beta\n";
-      throw new Error("origin missing");
-    }
     if (command === "gh") {
       if (options.failGh) throw new Error("gh: authentication required\nmore output");
       if (args[0] === "pr") {
@@ -35,13 +30,13 @@ function githubExec(options: { nonGithub?: boolean; failGh?: boolean } = {}): Ex
 }
 
 test("github stores open pull requests, and review requests in their own table", async () => {
-  const result = await runSql("select repo, root, number, checks from pull_requests order by repo, number", { loaders, exec: githubExec(), env: {}, params: {} });
+  const result = await runSql("select repo, root, number, checks from pull_requests order by repo, number", { loaders, exec: githubExec(), repo: fixtureRepo, env: {}, params: {} });
   assert.deepEqual(result.rows, [
     { repo: "example/alpha", root: paths.alpha, number: 7, checks: "pass" },
     { repo: "example/beta", root: paths.beta, number: 8, checks: "pending" },
   ]);
   assert.deepEqual(result.providers.map((entry) => entry.name), ["github", "herdr", "repos"]);
-  const reviews = await runSql("select repo, root, number from review_requests order by repo, number", { loaders, exec: githubExec(), env: {}, params: {} });
+  const reviews = await runSql("select repo, root, number from review_requests order by repo, number", { loaders, exec: githubExec(), repo: fixtureRepo, env: {}, params: {} });
   assert.deepEqual(reviews.rows, [
     { repo: "example/alpha", root: paths.alpha, number: 7 },
     { repo: "example/review", root: null, number: 9 },
@@ -50,12 +45,13 @@ test("github stores open pull requests, and review requests in their own table",
 });
 
 test("github lists a shared repository once and skips a non-GitHub origin", async () => {
-  const result = await runSql("select repo, count(*) as rows from pull_requests group by repo order by repo", { loaders, exec: githubExec({ nonGithub: true }), env: {}, params: {} });
+  const origins = new Map([[paths.alpha, "git@github.com:example/alpha.git"], [paths.alphaWorktree, "git@github.com:example/alpha.git"], [paths.beta, "https://gitlab.com/example/beta.git"]]);
+  const result = await runSql("select repo, count(*) as rows from pull_requests group by repo order by repo", { loaders, exec: githubExec({ nonGithub: true }), repo: fixtureRepoWithOrigins(origins), env: {}, params: {} });
   assert.deepEqual(result.rows, [{ repo: "example/alpha", rows: 1 }]);
 });
 
 test("github leaves its table empty when gh fails", async () => {
-  const result = await runSql("select * from pull_requests", { loaders, exec: githubExec({ failGh: true }), env: {}, params: {} });
+  const result = await runSql("select * from pull_requests", { loaders, exec: githubExec({ failGh: true }), repo: fixtureRepo, env: {}, params: {} });
   assert.deepEqual(result.rows, []);
   const provider = result.providers.find((entry) => entry.name === "github");
   assert.equal(provider?.ok, 0);

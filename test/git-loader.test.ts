@@ -10,7 +10,7 @@ import { loaders } from "../panoram.config.ts";
 import { gitLoader } from "../providers/git/loader.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
-import { fakeExec, fixtureAgentsWithLinkedWorktree, paths } from "./fixture.ts";
+import { fakeExec, fixtureAgentsWithLinkedWorktree, fixtureRepo, paths, repoForRoots } from "./fixture.ts";
 
 const loaderSet: Loader[] = [repoLoader, herdrLoader, gitLoader];
 
@@ -90,7 +90,6 @@ function gitFixture(status: string, worktrees: string, roots: readonly string[])
     const invocation = args.join(" ");
     if (command === "herdr" && invocation === "api snapshot") return snapshotForRoots(roots);
     if (command === "ghq" && invocation === "list -p") return "";
-    if (command === "git" && invocation === "rev-parse --show-toplevel") return cwd ?? "";
     if (command === "git" && invocation === "worktree list --porcelain") return worktrees;
     if (command === "git" && invocation === "status --porcelain=2 --branch") return status;
     throw new Error(`unexpected fake command: ${command} ${invocation} in ${cwd ?? ""}`);
@@ -112,6 +111,7 @@ test("git status preserves branch divergence and dirty counts", async () => {
     {
       loaders,
       exec: fakeExec(),
+      repo: fixtureRepo,
       env: {},
       scope: "all",
       params: { root: paths.alpha },
@@ -124,6 +124,7 @@ test("git status preserves branch divergence and dirty counts", async () => {
   const gamma = await runSql("select upstream from git_status where root = :root", {
     loaders,
     exec: fakeExec(),
+    repo: fixtureRepo,
     env: {},
     scope: "all",
     params: { root: paths.gamma },
@@ -135,6 +136,7 @@ test("a linked worktree root does not duplicate worktree rows", async () => {
   const result = await runSql("select path, repo_root, branch, head from worktrees order by path", {
     loaders,
     exec: fakeExec({ agents: fixtureAgentsWithLinkedWorktree() }),
+    repo: fixtureRepo,
     env: {},
     scope: "agents",
     params: {},
@@ -154,6 +156,7 @@ test("git status parses every porcelain v2 entry class", () => hegel.testAsync(a
     {
       loaders: loaderSet,
       exec: gitFixture(scenario.output, `worktree ${root}\nHEAD 0\n\n`, [root]),
+      repo: repoForRoots(new Set([root])),
       env: {},
       scope: "agents",
       params: {},
@@ -177,6 +180,7 @@ test("git worktrees preserve the main root and ignore a duplicate listing", () =
   const first = await runSql("select path, repo_root, branch, head from worktrees order by path", {
     loaders: loaderSet,
     exec: gitFixture("# branch.head main\n", output, [entries[0]!.path]),
+    repo: repoForRoots(new Set([entries[0]!.path])),
     env: {},
     scope: "agents",
     params: {},
@@ -187,6 +191,7 @@ test("git worktrees preserve the main root and ignore a duplicate listing", () =
     const second = await runSql("select path, repo_root, branch, head from worktrees order by path", {
       loaders: loaderSet,
       exec: gitFixture("# branch.head main\n", output, [entries[0]!.path, entries[1]!.path]),
+      repo: repoForRoots(new Set([entries[0]!.path, entries[1]!.path])),
       env: {},
       scope: "agents",
       params: {},

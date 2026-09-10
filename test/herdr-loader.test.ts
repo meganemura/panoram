@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import type { Exec } from "../core/loader.ts";
+import type { Repo } from "../core/repo.ts";
 import { runSql } from "../core/run.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { drawSnapshotAgents, generatedAgentCwds, generatedSnapshot } from "./fixture.ts";
@@ -13,27 +14,22 @@ const roots = new Map<string, string>([
   [generatedAgentCwds[1], "/root/b"],
 ]);
 
-function herdrFixture(snapshot: string, revParseCalls: string[]): Exec {
+function herdrFixture(snapshot: string): Exec {
   return async (command, args, cwd) => {
     const invocation = args.join(" ");
     if (command === "herdr" && invocation === "api snapshot") return snapshot;
-    if (command === "git" && invocation === "rev-parse --show-toplevel") {
-      const directory = cwd ?? "";
-      revParseCalls.push(directory);
-      const root = roots.get(directory);
-      if (root) return root;
-      throw new Error(`not a repository: ${directory}`);
-    }
     throw new Error(`unexpected fake command: ${command} ${invocation} in ${cwd ?? ""}`);
   };
 }
 
 test("herdr loader preserves snapshot rows and resolves each cwd once", () => hegel.testAsync(async (tc) => {
   const agents = drawSnapshotAgents(tc);
-  const revParseCalls: string[] = [];
+  const rootCalls: string[] = [];
+  const repo: Repo = { rootOf: async (cwd) => { rootCalls.push(cwd); return roots.get(cwd) ?? null; }, originOf: async () => null };
   const result = await runSql("select pane_id, session_id, name, root from agents order by pane_id", {
     loaders: [herdrLoader],
-    exec: herdrFixture(generatedSnapshot(agents), revParseCalls),
+    exec: herdrFixture(generatedSnapshot(agents)),
+    repo,
     env: {},
     scope: "agents",
     params: {},
@@ -47,5 +43,5 @@ test("herdr loader preserves snapshot rows and resolves each cwd once", () => he
 
   assert.equal(result.rows.length, agents.length);
   assert.deepEqual(result.rows, expected);
-  assert.equal(revParseCalls.length, new Set(agents.map((agent) => agent.cwd)).size);
+  assert.equal(rootCalls.length, new Set(agents.map((agent) => agent.cwd)).size);
 }));

@@ -12,6 +12,7 @@ import { runSql } from "../core/run.ts";
 import { beadsLoader, issuesFrom } from "../providers/beads/loader.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
+import { repoForRoots } from "./fixture.ts";
 
 const home = mkdtempSync(join(tmpdir(), "panoram-beads-"));
 const alpha = join(home, "src", "github.com", "example", "alpha");
@@ -31,7 +32,6 @@ function execFor(outputs: Readonly<Record<string, string>>, roots = [alpha, beta
   return async (command, args, cwd) => {
     if (command === "ghq" && args.join(" ") === "list -p") return "";
     if (command === "herdr" && args.join(" ") === "api snapshot") return snapshot(roots);
-    if (command === "git" && args.join(" ") === "rev-parse --show-toplevel") return cwd ?? "";
     if (command === "bd" && args[0] === "-C" && args[2] === "list" && args[3] === "--json" && args[1] !== undefined) {
       const output = outputs[args[1]];
       if (output !== undefined) return output;
@@ -43,7 +43,7 @@ function execFor(outputs: Readonly<Record<string, string>>, roots = [alpha, beta
 
 test("beads loads marker roots, skips absent and failed roots, and joins labels", async () => {
   const result = await runSql("select root, issue_id, labels from issues order by root, issue_id", {
-    loaders, exec: execFor({ [alpha]: JSON.stringify([issue("ex-1", ["one", "two"])]), [gamma]: JSON.stringify([issue("ex-2")]) }), params: {},
+    loaders, exec: execFor({ [alpha]: JSON.stringify([issue("ex-1", ["one", "two"])]), [gamma]: JSON.stringify([issue("ex-2")]) }), repo: repoForRoots(new Set([alpha, beta, gamma])), params: {},
   });
   assert.deepEqual(result.rows, [
     { root: alpha, issue_id: "ex-1", labels: "one,two" },
@@ -54,7 +54,7 @@ test("beads loads marker roots, skips absent and failed roots, and joins labels"
 
 test("beads keeps rows when one marked root fails", async () => {
   const result = await runSql("select root, issue_id from issues order by root", {
-    loaders, exec: execFor({ [alpha]: JSON.stringify([issue("ex-1")]) }), params: {},
+    loaders, exec: execFor({ [alpha]: JSON.stringify([issue("ex-1")]) }), repo: repoForRoots(new Set([alpha, beta, gamma])), params: {},
   });
   assert.deepEqual(result.rows, [{ root: alpha, issue_id: "ex-1" }]);
   assert.equal(result.providers.find((provider) => provider.name === "beads")?.ok, 1);
