@@ -90,3 +90,20 @@ A session joins an agent through the session id herdr's integration reports; a s
 | `long-running-without-agents` | | `root`, `pid`, `executable`, `elapsed_s`, `rss_kb` |
 
 `elapsed_s` is process age in seconds. `rss_kb` is resident memory in KiB. `cpu` is the current CPU percentage from ps. A listener can have null location fields when lsof cannot examine its cwd or it is outside the roots in scope. `agents` excludes `me`.
+
+## Skills and plugins (Claude Code, Codex)
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `skills` | | `path`, `source`, `agent`, `name`, `description?`, `root?`, `plugin?` |
+| `skills-in-dir` | `root` | the same columns, for skills an agent can use in that repository |
+| `plugins` | | `id`, `agent`, `name`, `marketplace?`, `version?`, `path`, `installed_at?`, `updated_at?` |
+| `duplicate-skill-names` | | `agent`, `name`, `sources`, `source_list` |
+| `skills-in-one-agent` | | `name`, `agent` |
+| `project-skills-with-agents` | | `root`, `name`, `description?`, `agents` |
+
+`source` identifies a user, project, plugin, or Codex system skill. Claude
+plugins come from installed registry entries, so an older cache copy is absent.
+Codex records enabled plugin IDs but no installed version, so each cached
+version of an enabled plugin appears. A Codex plugin ID starts with `codex:`
+to keep it distinct from a Claude Code plugin with the same marketplace ID.

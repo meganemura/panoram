@@ -72,6 +72,18 @@ export type Generated = {
     params: {};
     row: { root: string; pid: ProcessesId; executable: string; elapsed_s: number; rss_kb: number };
   };
+  "\n    select agent, name, cast(count(*) as integer) as sources, cast(group_concat(source, ',') as text) as source_list\n    from skills group by agent, name having count(*) > 1 order by agent, name": {
+    params: {};
+    row: { agent: string; name: string; sources: number; source_list: string | null };
+  };
+  "\n    select left_names.name, left_names.agent from (select distinct agent, name from skills) left_names\n    left join (select distinct agent, name from skills) right_names\n      on right_names.name = left_names.name and right_names.agent <> left_names.agent\n    where right_names.agent is null order by left_names.name, left_names.agent": {
+    params: {};
+    row: { name: string; agent: string };
+  };
+  "\n    select s.root, s.name, s.description, cast(count(a.pane_id) as integer) as agents\n    from skills s join agents a on a.root = s.root\n    where s.source = 'claude-project'\n    group by s.root, s.name, s.description order by s.root, s.name": {
+    params: {};
+    row: { root: string | null; name: string; description: string | null; agents: number };
+  };
 };
 
 export const generated: Meta<Generated> = {
@@ -91,4 +103,7 @@ export const generated: Meta<Generated> = {
   "\n    select pid, address, port, cwd, root, command\n    from listeners where root = :root order by port": { params: ["root"], encode: [], json: [], reads: ["listeners"] },
   "\n    select l.root, l.port, l.address, l.pid, l.command, cast(count(a.pane_id) as integer) as agents\n    from listeners l join agents a on a.root = l.root\n    where :me is null or a.pane_id <> :me\n    group by l.id order by l.port": { params: ["me"], encode: [], json: [], reads: ["agents", "listeners"] },
   "\n    select p.root, p.pid, p.executable, p.elapsed_s, p.rss_kb\n    from processes p left join agents a on a.root = p.root\n    where p.elapsed_s > 3600 and a.pane_id is null order by p.elapsed_s desc": { params: [], encode: [], json: [], reads: ["agents", "processes"] },
+  "\n    select agent, name, cast(count(*) as integer) as sources, cast(group_concat(source, ',') as text) as source_list\n    from skills group by agent, name having count(*) > 1 order by agent, name": { params: [], encode: [], json: [], reads: ["skills"] },
+  "\n    select left_names.name, left_names.agent from (select distinct agent, name from skills) left_names\n    left join (select distinct agent, name from skills) right_names\n      on right_names.name = left_names.name and right_names.agent <> left_names.agent\n    where right_names.agent is null order by left_names.name, left_names.agent": { params: [], encode: [], json: [], reads: ["skills"] },
+  "\n    select s.root, s.name, s.description, cast(count(a.pane_id) as integer) as agents\n    from skills s join agents a on a.root = s.root\n    where s.source = 'claude-project'\n    group by s.root, s.name, s.description order by s.root, s.name": { params: [], encode: [], json: [], reads: ["agents", "skills"] },
 };

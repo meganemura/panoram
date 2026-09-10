@@ -102,4 +102,20 @@ export const reportQueries = queries(generated, {
     select p.root, p.pid, p.executable, p.elapsed_s, p.rss_kb
     from processes p left join agents a on a.root = p.root
     where p.elapsed_s > 3600 and a.pane_id is null order by p.elapsed_s desc`,
+  // A source collision can change which skill an agent chooses.
+  duplicateSkillNames: `
+    select agent, name, cast(count(*) as integer) as sources, cast(group_concat(source, ',') as text) as source_list
+    from skills group by agent, name having count(*) > 1 order by agent, name`,
+  // Distinct names make an agent-level comparison independent of source count.
+  skillsInOneAgent: `
+    select left_names.name, left_names.agent from (select distinct agent, name from skills) left_names
+    left join (select distinct agent, name from skills) right_names
+      on right_names.name = left_names.name and right_names.agent <> left_names.agent
+    where right_names.agent is null order by left_names.name, left_names.agent`,
+  // Project skills matter where a terminal pane currently has a repository.
+  projectSkillsWithAgents: `
+    select s.root, s.name, s.description, cast(count(a.pane_id) as integer) as agents
+    from skills s join agents a on a.root = s.root
+    where s.source = 'claude-project'
+    group by s.root, s.name, s.description order by s.root, s.name`,
 });

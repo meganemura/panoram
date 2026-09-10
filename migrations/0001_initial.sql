@@ -32,6 +32,16 @@ CREATE TABLE listeners (
     root text,
     command text
   ) strict;
+CREATE TABLE plugins (
+    id text primary key not null,
+    agent text not null,
+    name text not null,
+    marketplace text,
+    version text,
+    path text not null,
+    installed_at integer,
+    updated_at integer
+  ) strict;
 CREATE TABLE processes (
     pid integer primary key not null,
     ppid integer not null,
@@ -98,6 +108,15 @@ CREATE TABLE sessions (
     updated_at integer,
     last_turn_at integer,
     last_branch text
+  ) strict;
+CREATE TABLE skills (
+    path text primary key not null,
+    source text not null,
+    agent text not null,
+    name text not null,
+    description text,
+    root text,
+    plugin text
   ) strict;
 CREATE TABLE solarsql_assert (name text not null, ok integer not null) strict;
 CREATE TABLE tool_uses (

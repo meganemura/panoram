@@ -22,3 +22,4 @@ Each ADR describes one decision and its consequences.
 | [0015](adr/0015-the-skill-is-the-usage-documentation.md) | The skill is the usage documentation, and the README is the door. |
 | [0016](adr/0016-github-is-observed-through-gh.md) | GitHub is observed through gh. |
 | [0017](adr/0017-processes-in-scope-only.md) | Processes in scope are observed through ps and lsof. |
+| [0018](adr/0018-skills-are-read-from-the-filesystem.md) | Skills and plugins are read from agent files. |

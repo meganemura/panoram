@@ -13,7 +13,7 @@ import { migrate } from "solarsql/node";
 
 const tablePool = Array.from({ length: 16 }, (_, index) => `t${index}`);
 const undeclaredTableNames = ["undeclared0", "undeclared1", "undeclared2"];
-const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "sessions", "pull_requests", "review_requests", "processes", "listeners", "providers"];
+const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "providers"];
 
 type LoaderGraph = {
   loaders: Loader[];
@@ -98,6 +98,9 @@ test("tablesRead finds every catalog query's declared tables", () => {
       "review-requests": ["review_requests"],
       "processes-in-dir": ["processes"],
       "listening-ports": ["listeners"],
+      skills: ["skills"],
+      "skills-in-dir": ["skills"],
+      plugins: ["plugins"],
       "agents-in-dirty-repos": ["agents", "git_status"],
       "crowded-repos": ["agents", "git_status"],
       "idle-worktrees": ["agents", "worktrees"],
@@ -114,6 +117,9 @@ test("tablesRead finds every catalog query's declared tables", () => {
       "ports-in-dir": ["listeners"],
       "servers-with-agents": ["agents", "listeners"],
       "long-running-without-agents": ["agents", "processes"],
+      "duplicate-skill-names": ["skills"],
+      "skills-in-one-agent": ["skills"],
+      "project-skills-with-agents": ["agents", "skills"],
     };
     for (const [name, named] of Object.entries(catalog) as [keyof typeof catalog, (typeof catalog)[keyof typeof catalog]][]) {
       assert.deepEqual(tablesRead(raw, named.query.sql).sort(), expected[name]);

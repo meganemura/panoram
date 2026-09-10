@@ -6,7 +6,7 @@ description: Use when an agent wants to know the state of the developer's machin
 # panoram
 
 panoram answers questions about one developer's machine.
-Each call observes the providers (herdr, git, ghq, mise, gh, ps, lsof, the session records) at that moment, joins them in an in-memory database, and prints rows.
+Each call observes the providers (herdr, git, ghq, mise, gh, ps, lsof, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
 Nothing is cached, and panoram never writes to a provider.
 
 Call it from anywhere:
@@ -28,6 +28,7 @@ The rules of the envelope, the flags, and the exit codes: [references/output.md]
 5. **When no query fits**: read the tables in [references/tables.md](references/tables.md) and ask the user to add a query file; how: [references/user-queries.md](references/user-queries.md). A user query shows up in `--help` with its description and is called like a built-in.
 6. **Before you push or open a pull request**: `prs-with-agents` for the branch you are on, then `failing-checks-with-agents`. These read GitHub and take several seconds. Do not use `--scope all` for this check.
 7. **Before you start a server, a watcher, or a build**: `ports-in-dir` and `processes-in-dir`; use `servers-with-agents` for the whole picture.
+8. **When you wonder which skill applies here, or whether a name collides**: `skills-in-dir`, `duplicate-skill-names`.
 
 Every query, its parameters, and its columns: [references/queries.md](references/queries.md).
 
@@ -66,6 +67,12 @@ Every query, its parameters, and its columns: [references/queries.md](references
 | `ports-in-dir` | `--root` | Listening ports of processes inside one repository. |
 | `servers-with-agents` | | Listening processes in repositories where an agent works. |
 | `long-running-without-agents` | | Processes older than an hour in repositories with no agent. |
+| `skills` | | Every skill Claude Code and Codex can load, with its source. |
+| `skills-in-dir` | `--root` | The skills an agent can use in one repository. |
+| `plugins` | | Every installed plugin, with its version. |
+| `duplicate-skill-names` | | Skill names that come from more than one source. |
+| `skills-in-one-agent` | | Skills that exist for Claude Code or Codex but not both. |
+| `project-skills-with-agents` | | Project skills in repositories where an agent works. |
 
 `--root` defaults to the git toplevel of the current directory.
 `--scope all` runs git and mise on every ghq repository instead of the repositories with an agent; it takes a few seconds.

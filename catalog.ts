@@ -10,6 +10,7 @@ import { reportQueries } from "./providers/report/public.ts";
 import { sessionQueries } from "./providers/sessions/public.ts";
 import { githubQueries } from "./providers/github/public.ts";
 import { processQueries } from "./providers/processes/public.ts";
+import { skillsQueries } from "./providers/skills/public.ts";
 
 export type Named = { query: Query<string, Entry>; description: string; params: readonly string[] };
 
@@ -29,6 +30,9 @@ export const catalog: Readonly<Record<string, Named>> = {
   "review-requests": { query: githubQueries.reviewRequests, description: "Open pull requests that request the user's review.", params: [] },
   "processes-in-dir": { query: processQueries.inDir, description: "Processes whose working directory is inside one repository.", params: ["root"] },
   "listening-ports": { query: processQueries.listening, description: "Every listening TCP port of the user, with the repository its process sits in.", params: [] },
+  "skills": { query: skillsQueries.all, description: "Every skill Claude Code and Codex can load, with its source.", params: [] },
+  "skills-in-dir": { query: skillsQueries.inDir, description: "The skills an agent can use in one repository.", params: ["root"] },
+  "plugins": { query: skillsQueries.plugins, description: "Every installed plugin, with its version.", params: [] },
   "agents-in-dirty-repos": { query: reportQueries.agentsInDirtyRepos, description: "Agents that work in a repository with uncommitted changes.", params: [] },
   "crowded-repos": { query: reportQueries.crowdedRepos, description: "Repositories with more than one agent, and their dirt.", params: [] },
   "idle-worktrees": { query: reportQueries.idleWorktrees, description: "Linked worktrees with no agent in them.", params: [] },
@@ -45,4 +49,7 @@ export const catalog: Readonly<Record<string, Named>> = {
   "ports-in-dir": { query: reportQueries.portsInDir, description: "Listening ports of processes inside one repository.", params: ["root"] },
   "servers-with-agents": { query: reportQueries.serversWithAgents, description: "Listening processes in repositories where an agent works.", params: [] },
   "long-running-without-agents": { query: reportQueries.longRunningWithoutAgents, description: "Processes older than an hour in repositories with no agent.", params: [] },
+  "duplicate-skill-names": { query: reportQueries.duplicateSkillNames, description: "Skill names that come from more than one source.", params: [] },
+  "skills-in-one-agent": { query: reportQueries.skillsInOneAgent, description: "Skills that exist for Claude Code or Codex but not both.", params: [] },
+  "project-skills-with-agents": { query: reportQueries.projectSkillsWithAgents, description: "Project skills in repositories where an agent works.", params: [] },
 };

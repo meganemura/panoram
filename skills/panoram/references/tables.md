@@ -70,6 +70,16 @@ It contains user processes whose cwd is inside a root in scope. `executable` is 
 `listeners`: `id` (key, `pid:address:port`), `pid`, `address`, `port`, `cwd?`, `root?`, `command?`.
 It contains every listening TCP socket of the user. A process can have rows for both IPv4 and IPv6 or for several ports. `root` is set when its cwd is inside a root in scope.
 
+## `skills` and `plugins` (skills)
+
+`skills`: `path` (key), `source`, `agent`, `name`, `description?`, `root?`, `plugin?`.
+`source` is `claude-user`, `claude-project`, `claude-plugin`, `codex-user`,
+`codex-system`, or `codex-plugin`. `root` is set for project skills. `plugin`
+is set for plugin skills.
+
+`plugins`: `id` (key), `agent`, `name`, `marketplace?`, `version?`, `path`,
+`installed_at?`, `updated_at?`. Timestamps are milliseconds since the epoch.
+
 ## `providers` (the core)
 
 `name` (key), `ok`, `observed_at`, `ms`, `error?`. One row per provider the call ran. A statement that reads only this table runs no provider.
