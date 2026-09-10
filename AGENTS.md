@@ -26,7 +26,6 @@ If you want to cite an internal document, write its substance in place instead.
 
 - Do not add dependencies without the owner's approval. Pin exact versions. Prefer language-official packages, then vendor packages, and avoid single-maintainer packages.
 - Comments say why, not what. Each module starts with its responsibility and its boundary.
-- `.claude-team/` holds task specs and reports. It is gitignored. Never reference it from committed content.
 - The npm package `panoram` is reserved. The owner runs `npm publish`; do not publish without the owner's explicit approval. The steps are in `docs/releasing.md`.
 - panoram reads. It never writes to a provider. Actions stay with the tools that own the state.
 - The database is new on every call, so there is one migration. On a schema change, delete `migrations/`, run `npx solarsql build panoram.config.ts`, then `npx solarsql migration initial panoram.config.ts`, and commit what they wrote.
