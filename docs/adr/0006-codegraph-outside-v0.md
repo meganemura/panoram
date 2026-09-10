@@ -1,4 +1,4 @@
-# 0006. CodeGraph is not a provider in v0.
+# 0006. CodeGraph is not a provider.
 
 Date: 2026-09-10
 
@@ -13,9 +13,9 @@ A provider that copied every index into the in-memory database would read every 
 
 ## Decision
 
-CodeGraph is not a provider in v0.
+CodeGraph is not a provider.
+The owner confirmed on 2026-09-10 that the question a CodeGraph provider would answer, whether an index is current, is not one panoram needs.
 
 ## Consequences
 
-The v0 providers are herdr, git, and ghq.
-A CodeGraph provider needs a loader that adds the repository root to each row it copies, and a scope that keeps the copy small.
+The providers read tools that describe a repository from the outside; the contents of a repository stay with the tools that index them.
