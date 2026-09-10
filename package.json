@@ -19,7 +19,7 @@
   "scripts": {
     "build": "solarsql build panoram.config.ts",
     "check": "solarsql build --check panoram.config.ts && tsc --noEmit",
-    "test": "node --test"
+    "test": "node --test 'test/**/*.test.ts'"
   },
   "dependencies": {
     "solarsql": "0.1.0"
