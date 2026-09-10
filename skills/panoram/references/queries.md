@@ -78,3 +78,15 @@ A session joins an agent through the session id herdr's integration reports; a s
 | `review-requests-with-agents` | | `repo`, `number`, `title`, `author?`, `updated_at`, `url`, `agents` |
 
 `repo` is the `owner/name` parsed from origin. `checks` is `pass`, `fail`, `pending`, or `none`. `prs-with-agents` and `failing-checks-with-agents` match an agent's branch to a pull request whose head lives in the same repository, so a pull request from a fork does not pair with a local branch of the same name. `agents` excludes `me`. The pull request queries take 3 to 9 seconds under the default scope; `review-requests` 2 to 5.
+
+## Processes (ps, lsof)
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `processes-in-dir` | `root` | `pid`, `ppid`, `executable`, `command`, `cwd`, `elapsed_s`, `rss_kb`, `cpu` |
+| `listening-ports` | | `pid`, `address`, `port`, `cwd?`, `root?`, `command?` |
+| `ports-in-dir` | `root` | `pid`, `address`, `port`, `cwd?`, `root?`, `command?` |
+| `servers-with-agents` | | `root`, `port`, `address`, `pid`, `command?`, `agents` |
+| `long-running-without-agents` | | `root`, `pid`, `executable`, `elapsed_s`, `rss_kb` |
+
+`elapsed_s` is process age in seconds. `rss_kb` is resident memory in KiB. `cpu` is the current CPU percentage from ps. A listener can have null location fields when lsof cannot examine its cwd or it is outside the roots in scope. `agents` excludes `me`.

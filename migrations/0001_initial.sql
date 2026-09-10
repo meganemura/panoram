@@ -23,6 +23,27 @@ CREATE TABLE git_status (
     untracked_count integer not null default 0,
     observed_at integer not null
   ) strict;
+CREATE TABLE listeners (
+    id text primary key not null,
+    pid integer not null,
+    address text not null,
+    port integer not null,
+    cwd text,
+    root text,
+    command text
+  ) strict;
+CREATE TABLE processes (
+    pid integer primary key not null,
+    ppid integer not null,
+    pgid integer not null,
+    cwd text not null,
+    root text not null,
+    command text not null,
+    executable text not null,
+    elapsed_s integer not null,
+    rss_kb integer not null,
+    cpu real not null
+  ) strict;
 CREATE TABLE providers (
     name text primary key not null,
     ok integer not null,

@@ -5,6 +5,7 @@ import type { Meta } from "solarsql";
 import type { AgentsId } from "../herdr/solarsql.generated.ts";
 import type { GitStatusId, WorktreesId } from "../git/solarsql.generated.ts";
 import type { SessionsId } from "../sessions/solarsql.generated.ts";
+import type { ProcessesId } from "../processes/solarsql.generated.ts";
 
 export type Generated = {
   "\n    select a.pane_id, a.name, a.status, a.root, g.branch, g.dirty_count, g.untracked_count\n    from agents a join git_status g on g.root = a.root\n    where g.dirty_count > 0 and (:me is null or a.pane_id <> :me)\n    order by g.dirty_count desc, a.pane_id": {
@@ -59,6 +60,18 @@ export type Generated = {
     params: { me: AgentsId | null };
     row: { repo: string; number: number; title: string; author: string | null; updated_at: number; url: string; agents: number };
   };
+  "\n    select pid, address, port, cwd, root, command\n    from listeners where root = :root order by port": {
+    params: { root: string | null };
+    row: { pid: number; address: string; port: number; cwd: string | null; root: string | null; command: string | null };
+  };
+  "\n    select l.root, l.port, l.address, l.pid, l.command, cast(count(a.pane_id) as integer) as agents\n    from listeners l join agents a on a.root = l.root\n    where :me is null or a.pane_id <> :me\n    group by l.id order by l.port": {
+    params: { me: AgentsId | null };
+    row: { root: string | null; port: number; address: string; pid: number; command: string | null; agents: number };
+  };
+  "\n    select p.root, p.pid, p.executable, p.elapsed_s, p.rss_kb\n    from processes p left join agents a on a.root = p.root\n    where p.elapsed_s > 3600 and a.pane_id is null order by p.elapsed_s desc": {
+    params: {};
+    row: { root: string; pid: ProcessesId; executable: string; elapsed_s: number; rss_kb: number };
+  };
 };
 
 export const generated: Meta<Generated> = {
@@ -75,4 +88,7 @@ export const generated: Meta<Generated> = {
   "\n    select a.pane_id, a.name, a.status, p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url\n    from agents a join git_status g on g.root = a.root\n    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo\n    where :me is null or a.pane_id <> :me\n    order by p.repo, p.number, a.pane_id": { params: ["me"], encode: [], json: [], reads: ["agents", "git_status", "pull_requests"] },
   "\n    select p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url,\n           cast(count(a.pane_id) as integer) as agents\n    from agents a join git_status g on g.root = a.root\n    join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo\n    where p.checks = 'fail' and (:me is null or a.pane_id <> :me)\n    group by p.id order by p.repo, p.number": { params: ["me"], encode: [], json: [], reads: ["agents", "git_status", "pull_requests"] },
   "\n    select p.repo, p.number, p.title, p.author, p.updated_at, p.url,\n           cast(count(a.pane_id) as integer) as agents\n    from review_requests p left join agents a on a.root = p.root and (:me is null or a.pane_id <> :me)\n    group by p.id order by p.updated_at desc": { params: ["me"], encode: [], json: [], reads: ["agents", "review_requests"] },
+  "\n    select pid, address, port, cwd, root, command\n    from listeners where root = :root order by port": { params: ["root"], encode: [], json: [], reads: ["listeners"] },
+  "\n    select l.root, l.port, l.address, l.pid, l.command, cast(count(a.pane_id) as integer) as agents\n    from listeners l join agents a on a.root = l.root\n    where :me is null or a.pane_id <> :me\n    group by l.id order by l.port": { params: ["me"], encode: [], json: [], reads: ["agents", "listeners"] },
+  "\n    select p.root, p.pid, p.executable, p.elapsed_s, p.rss_kb\n    from processes p left join agents a on a.root = p.root\n    where p.elapsed_s > 3600 and a.pane_id is null order by p.elapsed_s desc": { params: [], encode: [], json: [], reads: ["agents", "processes"] },
 };

@@ -62,6 +62,14 @@ The open pull requests of every repository in scope. `head_repo` is the reposito
 `id` (key, `owner/name#number`), `repo`, `root?`, `number`, `title`, `author?`, `updated_at`, `url`.
 One search across GitHub for the pull requests that request the caller's review; `root` is null when the repository is not in scope. Its own loader, because the search costs 2 to 5 s and a query that does not read this table does not wait for it.
 
+## `processes` and `listeners` (processes)
+
+`processes`: `pid` (key), `ppid`, `pgid`, `cwd`, `root`, `command`, `executable`, `elapsed_s`, `rss_kb`, `cpu`.
+It contains user processes whose cwd is inside a root in scope. `executable` is the basename of the first command field.
+
+`listeners`: `id` (key, `pid:address:port`), `pid`, `address`, `port`, `cwd?`, `root?`, `command?`.
+It contains every listening TCP socket of the user. A process can have rows for both IPv4 and IPv6 or for several ports. `root` is set when its cwd is inside a root in scope.
+
 ## `providers` (the core)
 
 `name` (key), `ok`, `observed_at`, `ms`, `error?`. One row per provider the call ran. A statement that reads only this table runs no provider.

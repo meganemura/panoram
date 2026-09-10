@@ -13,10 +13,11 @@ import { loader as gitLoader } from "./providers/git/public.ts";
 import { loader as miseLoader } from "./providers/mise/public.ts";
 import { loader as sessionsLoader } from "./providers/sessions/public.ts";
 import { loader as githubLoader, reviewsLoader as githubReviewsLoader } from "./providers/github/public.ts";
+import { loader as processesLoader } from "./providers/processes/public.ts";
 
-export const loaders: readonly Loader[] = [repoLoader, herdrLoader, gitLoader, miseLoader, sessionsLoader, githubLoader, githubReviewsLoader];
+export const loaders: readonly Loader[] = [repoLoader, herdrLoader, gitLoader, miseLoader, sessionsLoader, githubLoader, githubReviewsLoader, processesLoader];
 
 export default config({
-  modules: ["./core/providers", "./providers/repos", "./providers/herdr", "./providers/git", "./providers/mise", "./providers/sessions", "./providers/github", { dir: "./providers/report", readsAll: true }],
+  modules: ["./core/providers", "./providers/repos", "./providers/herdr", "./providers/git", "./providers/mise", "./providers/sessions", "./providers/github", "./providers/processes", { dir: "./providers/report", readsAll: true }],
   migrations: "./migrations",
 });

@@ -87,4 +87,19 @@ export const reportQueries = queries(generated, {
            cast(count(a.pane_id) as integer) as agents
     from review_requests p left join agents a on a.root = p.root and (:me is null or a.pane_id <> :me)
     group by p.id order by p.updated_at desc`,
+  // Ports inside the selected repository.
+  portsInDir: `
+    select pid, address, port, cwd, root, command
+    from listeners where root = :root order by port`,
+  // A server and the agents whose repository it occupies.
+  serversWithAgents: `
+    select l.root, l.port, l.address, l.pid, l.command, cast(count(a.pane_id) as integer) as agents
+    from listeners l join agents a on a.root = l.root
+    where :me is null or a.pane_id <> :me
+    group by l.id order by l.port`,
+  // Long-lived repository processes without an agent pane.
+  longRunningWithoutAgents: `
+    select p.root, p.pid, p.executable, p.elapsed_s, p.rss_kb
+    from processes p left join agents a on a.root = p.root
+    where p.elapsed_s > 3600 and a.pane_id is null order by p.elapsed_s desc`,
 });

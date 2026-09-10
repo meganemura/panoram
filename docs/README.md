@@ -21,3 +21,4 @@ Each ADR describes one decision and its consequences.
 | [0014](adr/0014-sessions-are-observed-not-searched.md) | Sessions are observed, not searched. |
 | [0015](adr/0015-the-skill-is-the-usage-documentation.md) | The skill is the usage documentation, and the README is the door. |
 | [0016](adr/0016-github-is-observed-through-gh.md) | GitHub is observed through gh. |
+| [0017](adr/0017-processes-in-scope-only.md) | Processes in scope are observed through ps and lsof. |

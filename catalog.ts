@@ -9,6 +9,7 @@ import { repoQueries } from "./providers/repos/public.ts";
 import { reportQueries } from "./providers/report/public.ts";
 import { sessionQueries } from "./providers/sessions/public.ts";
 import { githubQueries } from "./providers/github/public.ts";
+import { processQueries } from "./providers/processes/public.ts";
 
 export type Named = { query: Query<string, Entry>; description: string; params: readonly string[] };
 
@@ -26,6 +27,8 @@ export const catalog: Readonly<Record<string, Named>> = {
   "idle-sessions": { query: sessionQueries.idle, description: "Sessions ordered by how long they have been idle.", params: [] },
   "pull-requests": { query: githubQueries.open, description: "Open pull requests of one repository.", params: ["root"] },
   "review-requests": { query: githubQueries.reviewRequests, description: "Open pull requests that request the user's review.", params: [] },
+  "processes-in-dir": { query: processQueries.inDir, description: "Processes whose working directory is inside one repository.", params: ["root"] },
+  "listening-ports": { query: processQueries.listening, description: "Every listening TCP port of the user, with the repository its process sits in.", params: [] },
   "agents-in-dirty-repos": { query: reportQueries.agentsInDirtyRepos, description: "Agents that work in a repository with uncommitted changes.", params: [] },
   "crowded-repos": { query: reportQueries.crowdedRepos, description: "Repositories with more than one agent, and their dirt.", params: [] },
   "idle-worktrees": { query: reportQueries.idleWorktrees, description: "Linked worktrees with no agent in them.", params: [] },
@@ -39,4 +42,7 @@ export const catalog: Readonly<Record<string, Named>> = {
   "prs-with-agents": { query: reportQueries.prsWithAgents, description: "Agents whose branch has an open pull request, with its checks.", params: [] },
   "failing-checks-with-agents": { query: reportQueries.failingChecksWithAgents, description: "Open pull requests with failing checks in repositories where an agent works.", params: [] },
   "review-requests-with-agents": { query: reportQueries.reviewRequestsWithAgents, description: "Requested reviews, with the number of agents in that repository.", params: [] },
+  "ports-in-dir": { query: reportQueries.portsInDir, description: "Listening ports of processes inside one repository.", params: ["root"] },
+  "servers-with-agents": { query: reportQueries.serversWithAgents, description: "Listening processes in repositories where an agent works.", params: [] },
+  "long-running-without-agents": { query: reportQueries.longRunningWithoutAgents, description: "Processes older than an hour in repositories with no agent.", params: [] },
 };
