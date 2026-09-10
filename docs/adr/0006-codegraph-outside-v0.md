@@ -8,7 +8,7 @@ Status: accepted
 
 CodeGraph stores its index in `.codegraph/codegraph.db`, a SQLite file per repository.
 Its `files.path` values are relative to the repository, so a row carries no value that joins on `root`.
-SQLite attaches at most 10 databases to one connection, and the machine has 65 repositories.
+SQLite attaches at most 10 databases to one connection, and the machine has more than 60 repositories.
 A provider that copied every index into the in-memory database would read every repository on every call.
 
 ## Decision
