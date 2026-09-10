@@ -80,6 +80,23 @@ is set for plugin skills.
 `plugins`: `id` (key), `agent`, `name`, `marketplace?`, `version?`, `path`,
 `installed_at?`, `updated_at?`. Timestamps are milliseconds since the epoch.
 
+## `issues` (beads)
+
+`id` (key, `root issue_id`), `root`, `issue_id`, `title`, `status`,
+`priority?`, `issue_type?`, `assignee?`, `labels?`, `created_at?`,
+`updated_at?`, `dependency_count`, `dependent_count`, `comment_count`.
+The table contains open issues from roots in scope that have `.beads`.
+`labels` joins labels with commas. Timestamps are milliseconds since the epoch.
+
+## `workflow_runs` (headsign)
+
+`root` (key), `workflow`, `workflow_path?`, `status`, `phase?`,
+`total_iterations`, `attempts?`, `last_failure?`, `end_reason?`,
+`stop_nudges`, `driver_agent?`, `phase_entered_at?`.
+The table contains roots in scope with a readable `.headsign/state.json`.
+`attempts` and `last_failure` are JSON text. `phase_entered_at` is milliseconds
+since the epoch.
+
 ## `providers` (the core)
 
 `name` (key), `ok`, `observed_at`, `ms`, `error?`. One row per provider the call ran. A statement that reads only this table runs no provider.

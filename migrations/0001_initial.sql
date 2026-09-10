@@ -23,6 +23,22 @@ CREATE TABLE git_status (
     untracked_count integer not null default 0,
     observed_at integer not null
   ) strict;
+CREATE TABLE issues (
+    id text primary key not null,
+    root text not null,
+    issue_id text not null,
+    title text not null,
+    status text not null,
+    priority integer,
+    issue_type text,
+    assignee text,
+    labels text,
+    created_at integer,
+    updated_at integer,
+    dependency_count integer not null default 0,
+    dependent_count integer not null default 0,
+    comment_count integer not null default 0
+  ) strict;
 CREATE TABLE listeners (
     id text primary key not null,
     pid integer not null,
@@ -134,6 +150,20 @@ CREATE TABLE tools (
     install_path text,
     installed integer not null,
     active integer not null
+  ) strict;
+CREATE TABLE workflow_runs (
+    root text primary key not null,
+    workflow text not null,
+    workflow_path text,
+    status text not null,
+    phase text,
+    total_iterations integer not null default 0,
+    attempts text,
+    last_failure text,
+    end_reason text,
+    stop_nudges integer not null default 0,
+    driver_agent text,
+    phase_entered_at integer
   ) strict;
 CREATE TABLE worktrees (
     path text primary key not null,

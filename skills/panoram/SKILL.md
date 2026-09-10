@@ -6,7 +6,7 @@ description: Use when an agent wants to know the state of the developer's machin
 # panoram
 
 panoram answers questions about one developer's machine.
-Each call observes the providers (herdr, git, ghq, mise, gh, ps, lsof, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
+Each call observes the providers (herdr, git, ghq, mise, gh, ps, lsof, beads, headsign state files, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
 Nothing is cached, and panoram never writes to a provider.
 
 Call it from anywhere:
@@ -29,6 +29,7 @@ The rules of the envelope, the flags, and the exit codes: [references/output.md]
 6. **Before you push or open a pull request**: `prs-with-agents` for the branch you are on, then `failing-checks-with-agents`. These read GitHub and take several seconds. Do not use `--scope all` for this check.
 7. **Before you start a server, a watcher, or a build**: `ports-in-dir` and `processes-in-dir`; use `servers-with-agents` for the whole picture.
 8. **When you wonder which skill applies here, or whether a name collides**: `skills-in-dir`, `duplicate-skill-names`.
+9. **When you pick up a repository**: `issues` and `workflow` for its root; use `running-workflows-unattended` and `issues-unattended` for work nobody holds.
 
 Every query, its parameters, and its columns: [references/queries.md](references/queries.md).
 
@@ -73,6 +74,14 @@ Every query, its parameters, and its columns: [references/queries.md](references
 | `duplicate-skill-names` | | Skill names that come from more than one source. |
 | `skills-in-one-agent` | | Skills that exist for Claude Code or Codex but not both. |
 | `project-skills-with-agents` | | Project skills in repositories where an agent works. |
+| `issues` | `--root` | Open beads issues of one repository. |
+| `issues-with-agents` | | Repositories with an agent and their open beads issues. |
+| `issues-unattended` | | Repositories with open beads issues and no agent. |
+| `workflow` | `--root` | The headsign run of one repository. |
+| `workflows` | | Every headsign run, with its phase. |
+| `running-workflows-with-agents` | | Running headsign workflows in repositories where an agent works. |
+| `running-workflows-unattended` | | Running headsign workflows with no agent in the repository. |
+| `stopped-workflows` | | Headsign runs that stopped or recorded a failure. |
 
 `--root` defaults to the git toplevel of the current directory.
 `--scope all` runs git and mise on every ghq repository instead of the repositories with an agent; it takes a few seconds.

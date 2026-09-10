@@ -13,7 +13,7 @@ import { migrate } from "solarsql/node";
 
 const tablePool = Array.from({ length: 16 }, (_, index) => `t${index}`);
 const undeclaredTableNames = ["undeclared0", "undeclared1", "undeclared2"];
-const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "providers"];
+const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "issues", "workflow_runs", "providers"];
 
 type LoaderGraph = {
   loaders: Loader[];
@@ -120,6 +120,14 @@ test("tablesRead finds every catalog query's declared tables", () => {
       "duplicate-skill-names": ["skills"],
       "skills-in-one-agent": ["skills"],
       "project-skills-with-agents": ["agents", "skills"],
+      issues: ["issues"],
+      "issues-with-agents": ["agents", "issues"],
+      "issues-unattended": ["agents", "issues"],
+      workflow: ["workflow_runs"],
+      workflows: ["workflow_runs"],
+      "running-workflows-with-agents": ["agents", "workflow_runs"],
+      "running-workflows-unattended": ["agents", "workflow_runs"],
+      "stopped-workflows": ["workflow_runs"],
     };
     for (const [name, named] of Object.entries(catalog) as [keyof typeof catalog, (typeof catalog)[keyof typeof catalog]][]) {
       assert.deepEqual(tablesRead(raw, named.query.sql).sort(), expected[name]);

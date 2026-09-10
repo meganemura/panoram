@@ -11,6 +11,8 @@ import { sessionQueries } from "./providers/sessions/public.ts";
 import { githubQueries } from "./providers/github/public.ts";
 import { processQueries } from "./providers/processes/public.ts";
 import { skillsQueries } from "./providers/skills/public.ts";
+import { beadsQueries } from "./providers/beads/public.ts";
+import { headsignQueries } from "./providers/headsign/public.ts";
 
 export type Named = { query: Query<string, Entry>; description: string; params: readonly string[] };
 
@@ -33,6 +35,14 @@ export const catalog: Readonly<Record<string, Named>> = {
   "skills": { query: skillsQueries.all, description: "Every skill Claude Code and Codex can load, with its source.", params: [] },
   "skills-in-dir": { query: skillsQueries.inDir, description: "The skills an agent can use in one repository.", params: ["root"] },
   "plugins": { query: skillsQueries.plugins, description: "Every installed plugin, with its version.", params: [] },
+  "issues": { query: beadsQueries.open, description: "Open beads issues of one repository.", params: ["root"] },
+  "issues-with-agents": { query: reportQueries.issuesWithAgents, description: "Repositories with an agent and their open beads issues.", params: [] },
+  "issues-unattended": { query: reportQueries.issuesUnattended, description: "Repositories with open beads issues and no agent.", params: [] },
+  "workflow": { query: headsignQueries.inDir, description: "The headsign run of one repository.", params: ["root"] },
+  "workflows": { query: headsignQueries.all, description: "Every headsign run, with its phase.", params: [] },
+  "running-workflows-with-agents": { query: reportQueries.runningWorkflowsWithAgents, description: "Running headsign workflows in repositories where an agent works.", params: [] },
+  "running-workflows-unattended": { query: reportQueries.runningWorkflowsUnattended, description: "Running headsign workflows with no agent in the repository.", params: [] },
+  "stopped-workflows": { query: reportQueries.stoppedRuns, description: "Headsign runs that stopped or recorded a failure.", params: [] },
   "agents-in-dirty-repos": { query: reportQueries.agentsInDirtyRepos, description: "Agents that work in a repository with uncommitted changes.", params: [] },
   "crowded-repos": { query: reportQueries.crowdedRepos, description: "Repositories with more than one agent, and their dirt.", params: [] },
   "idle-worktrees": { query: reportQueries.idleWorktrees, description: "Linked worktrees with no agent in them.", params: [] },

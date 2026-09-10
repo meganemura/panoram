@@ -107,3 +107,27 @@ plugins come from installed registry entries, so an older cache copy is absent.
 Codex records enabled plugin IDs but no installed version, so each cached
 version of an enabled plugin appears. A Codex plugin ID starts with `codex:`
 to keep it distinct from a Claude Code plugin with the same marketplace ID.
+
+## Issues (beads)
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `issues` | `root` | `id`, `root`, `issue_id`, `title`, `status`, `priority?`, `issue_type?`, `assignee?`, `labels?`, `created_at?`, `updated_at?`, `dependency_count`, `dependent_count`, `comment_count` |
+| `issues-with-agents` | | `root`, `open_issues`, `top_priority?`, `agents` |
+| `issues-unattended` | | `root`, `open_issues`, `top_priority?` |
+
+`issues` reads open beads issues only. `labels` joins label values with commas.
+`agents` excludes `me`.
+
+## Workflows (headsign)
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `workflow` | `root` | `root`, `workflow`, `workflow_path?`, `status`, `phase?`, `total_iterations`, `attempts?`, `last_failure?`, `end_reason?`, `stop_nudges`, `driver_agent?`, `phase_entered_at?` |
+| `workflows` | | the same columns, ordered by `status`, `root` |
+| `running-workflows-with-agents` | | `root`, `workflow`, `phase?`, `total_iterations`, `phase_entered_at?`, `agents` |
+| `running-workflows-unattended` | | `root`, `workflow`, `phase?`, `phase_entered_at?` |
+| `stopped-workflows` | | `root`, `workflow`, `phase?`, `status`, `end_reason?`, `last_failure?` |
+
+`attempts` and `last_failure` hold JSON text from the state file. `agents`
+excludes `me`.

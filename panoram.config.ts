@@ -15,10 +15,12 @@ import { loader as sessionsLoader } from "./providers/sessions/public.ts";
 import { loader as githubLoader, reviewsLoader as githubReviewsLoader } from "./providers/github/public.ts";
 import { loader as processesLoader } from "./providers/processes/public.ts";
 import { loader as skillsLoader } from "./providers/skills/public.ts";
+import { loader as beadsLoader } from "./providers/beads/public.ts";
+import { loader as headsignLoader } from "./providers/headsign/public.ts";
 
-export const loaders: readonly Loader[] = [repoLoader, herdrLoader, gitLoader, miseLoader, sessionsLoader, githubLoader, githubReviewsLoader, processesLoader, skillsLoader];
+export const loaders: readonly Loader[] = [repoLoader, herdrLoader, gitLoader, miseLoader, sessionsLoader, githubLoader, githubReviewsLoader, processesLoader, skillsLoader, beadsLoader, headsignLoader];
 
 export default config({
-  modules: ["./core/providers", "./providers/repos", "./providers/herdr", "./providers/git", "./providers/mise", "./providers/sessions", "./providers/github", "./providers/processes", "./providers/skills", { dir: "./providers/report", readsAll: true }],
+  modules: ["./core/providers", "./providers/repos", "./providers/herdr", "./providers/git", "./providers/mise", "./providers/sessions", "./providers/github", "./providers/processes", "./providers/skills", "./providers/beads", "./providers/headsign", { dir: "./providers/report", readsAll: true }],
   migrations: "./migrations",
 });

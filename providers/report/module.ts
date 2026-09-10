@@ -118,4 +118,31 @@ export const reportQueries = queries(generated, {
     from skills s join agents a on a.root = s.root
     where s.source = 'claude-project'
     group by s.root, s.name, s.description order by s.root, s.name`,
+  // Open issues show the work beside agents that occupy the same repository.
+  issuesWithAgents: `
+    select i.root, cast(count(distinct i.id) as integer) as open_issues,
+           cast(min(i.priority) as integer) as top_priority, cast(count(distinct a.pane_id) as integer) as agents
+    from issues i join agents a on a.root = i.root
+    where :me is null or a.pane_id <> :me
+    group by i.root order by i.root`,
+  // A repository with issues but no pane needs an explicit owner.
+  issuesUnattended: `
+    select i.root, cast(count(distinct i.id) as integer) as open_issues, cast(min(i.priority) as integer) as top_priority
+    from issues i left join agents a on a.root = i.root
+    where a.pane_id is null group by i.root order by i.root`,
+  // Only a running workflow needs the presence count of non-caller panes.
+  runningWorkflowsWithAgents: `
+    select w.root, w.workflow, w.phase, w.total_iterations, w.phase_entered_at, cast(count(a.pane_id) as integer) as agents
+    from workflow_runs w join agents a on a.root = w.root
+    where w.status = 'running' and (:me is null or a.pane_id <> :me)
+    group by w.root, w.workflow, w.phase, w.total_iterations, w.phase_entered_at order by w.root`,
+  // A running workflow without a pane cannot receive a prompt to continue.
+  runningWorkflowsUnattended: `
+    select w.root, w.workflow, w.phase, w.phase_entered_at
+    from workflow_runs w left join agents a on a.root = w.root
+    where w.status = 'running' and a.pane_id is null order by w.root`,
+  // A recorded failure remains useful even if the state calls the run complete.
+  stoppedRuns: `
+    select root, workflow, phase, status, end_reason, last_failure from workflow_runs
+    where (status <> 'running' and status <> 'complete') or last_failure is not null order by root`,
 });

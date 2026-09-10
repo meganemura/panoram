@@ -23,3 +23,5 @@ Each ADR describes one decision and its consequences.
 | [0016](adr/0016-github-is-observed-through-gh.md) | GitHub is observed through gh. |
 | [0017](adr/0017-processes-in-scope-only.md) | Processes in scope are observed through ps and lsof. |
 | [0018](adr/0018-skills-are-read-from-the-filesystem.md) | Skills and plugins are read from agent files. |
+| [0019](adr/0019-beads-issues-are-read-per-repository.md) | Beads issues are read per repository. |
+| [0020](adr/0020-headsign-state-is-read-from-the-file.md) | Headsign state is read from the file. |
