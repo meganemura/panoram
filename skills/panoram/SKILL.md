@@ -1,53 +1,63 @@
 ---
 name: panoram
-description: Use when an agent needs to find agents, dirty repositories, or idle worktrees before it starts work in a repository another agent may use.
+description: Use when an agent wants to know the state of the developer's machine before it acts. Which agents run where and what they do, which repositories are dirty or behind, which worktrees have nobody in them, which sessions are idle, which tool versions a repository activates. Also use when the user names panoram, a panoram query, or asks to add a query.
 ---
 
 # panoram
 
-Run panoram from its checkout:
+panoram answers questions about one developer's machine.
+Each call observes the providers (herdr, git, ghq, mise, the session records) at that moment, joins them in an in-memory database, and prints rows.
+Nothing is cached, and panoram never writes to a provider.
+
+Call it from anywhere:
 
 ```sh
-node cli.ts <query>
+node /path/to/panoram/cli.ts <query> [--root DIR] [--scope agents|all] [--me PANE] [--tsv]
 ```
 
-Use `panoram <query>` when the package bin is linked.
+The JSON envelope carries `rows` and `providers`.
+Read `providers` before you trust `rows`: a provider with `ok` 0 left its tables empty in this call.
+The rules of the envelope, the flags, and the exit codes: [references/output.md](references/output.md).
 
-| Query | Parameter | Result |
+## Workflow
+
+1. **Before you start work in a repository**: `in-dir` (who else is here), `crowded-repos`, `dirty` and `behind-upstream-with-agents` (what state the checkout is in). The rows exclude your own pane.
+2. **When the user asks what is going on**: `agents-with-sessions` (names, idle time), `working`, `idle-sessions`, `workspaces`.
+3. **When you look for a place to work**: `idle-worktrees` (a worktree with nobody in it), `dirty-unattended` (changes nobody is tending).
+4. **When a tool is missing or the wrong version**: `tools-in-dir`, `missing-tools-with-agents`, `tool-versions-split`.
+5. **When no query fits**: read the tables in [references/tables.md](references/tables.md) and ask the user to add a query file; how: [references/user-queries.md](references/user-queries.md). A user query shows up in `--help` with its description and is called like a built-in.
+
+Every query, its parameters, and its columns: [references/queries.md](references/queries.md).
+
+## Queries
+
+| Query | Parameter | Answers |
 | --- | --- | --- |
-| `agents` | None | Lists every agent and its repository root. |
-| `in-dir` | `--root DIR` | Lists agents in one repository. |
-| `working` | None | Lists agents whose status is `working`. |
-| `workspaces` | None | Groups agents by workspace and repository root. |
-| `dirty` | None | Lists repositories with uncommitted changes. |
-| `worktrees` | `--root DIR` | Lists worktrees for one repository. |
-| `repos` | None | Lists repositories that ghq manages. |
-| `tools` | None | Lists every tool version mise has installed. |
-| `tools-in-dir` | `--root DIR` | Lists the tools mise activates in one repository. |
-| `sessions` | None | Lists Claude Code and Codex sessions alive now. |
-| `idle-sessions` | None | Lists sessions by idle time. |
-| `agents-in-dirty-repos` | None | Lists agents in dirty repositories. |
-| `crowded-repos` | None | Lists repositories with more than one agent. |
-| `idle-worktrees` | None | Lists linked worktrees without an agent. |
-| `agents-outside-ghq` | None | Lists agents outside repositories that ghq manages. |
-| `dirty-unattended` | None | Lists dirty repositories without an agent. |
-| `behind-upstream-with-agents` | None | Lists repositories behind upstream with an agent. |
-| `missing-tools-with-agents` | None | Lists repositories with an agent where a requested tool is not installed. |
-| `tool-versions-split` | None | Lists tools whose active version differs between repositories with an agent. |
-| `agents-with-sessions` | None | Lists agents with session details and last activity. |
-| `sessions-without-pane` | None | Lists live sessions that do not have an agent pane. |
+| `agents` | | Every agent herdr hosts, with its repository root. |
+| `in-dir` | `--root` | The agents in one repository. |
+| `working` | | The agents that work right now. |
+| `workspaces` | | Which workspace holds agents of which repository. |
+| `agents-with-sessions` | | Agents with the name, start time, and last activity of their session. |
+| `sessions` | | Every Claude Code and Codex session alive now. |
+| `idle-sessions` | | Sessions ordered by how long they have been idle. |
+| `sessions-without-pane` | | Sessions alive now that herdr does not show as an agent. |
+| `dirty` | | Repositories with uncommitted changes, dirtiest first. |
+| `worktrees` | `--root` | The worktrees of one repository. |
+| `repos` | | Every repository ghq manages. |
+| `agents-in-dirty-repos` | | Agents that work in a repository with uncommitted changes. |
+| `crowded-repos` | | Repositories with more than one agent, and their dirt. |
+| `idle-worktrees` | | Linked worktrees with no agent in them. |
+| `agents-outside-ghq` | | Agents whose repository ghq does not manage, or no repository at all. |
+| `dirty-unattended` | | Repositories with uncommitted changes and no agent. |
+| `behind-upstream-with-agents` | | Repositories behind their upstream that have an agent in them. |
+| `tools` | | Every tool version mise has installed. |
+| `tools-in-dir` | `--root` | The tools mise activates in one repository. |
+| `missing-tools-with-agents` | | Repositories with an agent where a requested tool is not installed. |
+| `tool-versions-split` | | Tools whose active version differs between repositories with an agent. |
 
-User queries appear in `--help` with their descriptions.
-An agent can call a user query like a built-in query.
+`--root` defaults to the git toplevel of the current directory.
+`--scope all` runs git and mise on every ghq repository instead of the repositories with an agent; it takes a few seconds.
 
-JSON output has `query`, `scope`, `me`, `rows`, and `providers`.
-Each provider row has `name`, `ok`, `observed_at`, `ms`, and `error`.
-Read `ok` and `observed_at` before you trust `rows`.
-An `ok` value of `0` means that provider left its tables empty in this call.
+## Where the reasoning is
 
-`--scope agents` is the default and loads Git data for repositories with an agent.
-`--scope all` also loads Git data for every repository that ghq manages.
-`--root` defaults to the Git top level of the current directory.
-panoram uses the directory when Git cannot resolve a top level.
-The core identifies `me` as the caller's pane by default.
-Queries that take `me` exclude that pane unless you set `--me` to an empty value.
+The design records in `docs/adr/` of the repository hold the decisions and the measurements behind them.
