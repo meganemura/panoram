@@ -3,16 +3,80 @@
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { test } from "node:test";
+import * as hegel from "@hegeldev/hegel";
+import * as gs from "@hegeldev/hegel/generators";
 import { catalog } from "../catalog.ts";
 import type { Loader } from "../core/loader.ts";
 import { loadersFor, tablesRead } from "../core/resolve.ts";
 import { migrations } from "../migrations/index.ts";
 import { migrate } from "solarsql/node";
 
+const tablePool = Array.from({ length: 16 }, (_, index) => `t${index}`);
+const undeclaredTableNames = ["undeclared0", "undeclared1", "undeclared2"];
+const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "providers"];
+
+type LoaderGraph = {
+  loaders: Loader[];
+  names: string[];
+  owners: Map<string, Loader>;
+};
+
 function migratedDatabase(): DatabaseSync {
   const raw = new DatabaseSync(":memory:");
   migrate(raw, migrations);
   return raw;
+}
+
+function drawLoaderGraph(tc: hegel.TestCase, minimumLoaders = 0): LoaderGraph {
+  const names = tc.draw(gs.arrays(gs.fromRegex("[a-h]"), { minSize: minimumLoaders, maxSize: 8, unique: true }));
+  const tableOwners = names.length === 0
+    ? tablePool.map(() => null)
+    : tc.draw(gs.arrays(gs.optional(gs.sampledFrom(names)), { minSize: tablePool.length, maxSize: tablePool.length }));
+  const loaders: Loader[] = [];
+  const owners = new Map<string, Loader>();
+
+  for (const [index, name] of names.entries()) {
+    const tables = tablePool.filter((_, tableIndex) => tableOwners[tableIndex] === name);
+    const after = index === 0
+      ? []
+      : tc.draw(gs.arrays(gs.sampledFrom(names.slice(0, index)), { minSize: 0, maxSize: index, unique: true }));
+    const loader: Loader = { name, tables, after, async load() {} };
+    loaders.push(loader);
+    for (const table of tables) owners.set(table, loader);
+  }
+  return { loaders, names, owners };
+}
+
+function drawRequestedTables(tc: hegel.TestCase, graph: LoaderGraph): string[] {
+  const declared = [...graph.owners.keys()].filter(() => tc.draw(gs.booleans()));
+  const extra = tc.draw(gs.arrays(gs.sampledFrom(undeclaredTableNames), { minSize: 0, maxSize: undeclaredTableNames.length, unique: true }));
+  return [...declared, ...extra];
+}
+
+function closure(graph: LoaderGraph, tables: readonly string[]): Set<string> {
+  const byName = new Map(graph.loaders.map((loader) => [loader.name, loader]));
+  const wanted = new Set<string>();
+  const add = (loader: Loader) => {
+    if (wanted.has(loader.name)) return;
+    wanted.add(loader.name);
+    for (const dependency of loader.after) add(byName.get(dependency)!);
+  };
+  for (const table of tables) {
+    const owner = graph.owners.get(table);
+    if (owner) add(owner);
+  }
+  return wanted;
+}
+
+function dependsOn(loaders: readonly Loader[], from: string, target: string): boolean {
+  const byName = new Map(loaders.map((loader) => [loader.name, loader]));
+  const visit = (name: string): boolean => {
+    for (const dependency of byName.get(name)!.after) {
+      if (dependency === target || visit(dependency)) return true;
+    }
+    return false;
+  };
+  return visit(from);
 }
 
 test("tablesRead finds every catalog query's declared tables", () => {
@@ -60,4 +124,76 @@ test("loadersFor rejects cycles and missing dependencies", () => {
   const missing: Loader[] = [{ name: "a", tables: ["a"], after: ["missing"], async load() {} }];
   assert.throws(() => loadersFor(cycle, ["a"]), /loader cycle: a -> b -> a/);
   assert.throws(() => loadersFor(missing, ["a"]), /loader a runs after missing, which is not configured/);
+});
+
+test("loadersFor closes the requested tables over loader dependencies", () => hegel.test((tc) => {
+  const graph = drawLoaderGraph(tc);
+  const tables = drawRequestedTables(tc, graph);
+  const result = loadersFor(graph.loaders, tables);
+  const expected = closure(graph, tables);
+
+  assert.deepEqual(new Set(result.map((loader) => loader.name)), expected);
+  for (const table of tables) {
+    const owner = graph.owners.get(table);
+    if (owner) assert.ok(result.some((loader) => loader.name === owner.name));
+  }
+}));
+
+test("loadersFor orders dependencies once and keeps independent loader order", () => hegel.test((tc) => {
+  const graph = drawLoaderGraph(tc);
+  const tables = drawRequestedTables(tc, graph);
+  const result = loadersFor(graph.loaders, tables);
+  const names = result.map((loader) => loader.name);
+  const index = new Map(names.map((name, position) => [name, position]));
+
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(new Set(names), closure(graph, tables));
+  for (const loader of result) {
+    for (const dependency of loader.after) assert.ok(index.get(dependency)! < index.get(loader.name)!);
+  }
+  for (let left = 0; left < result.length; left++) {
+    for (let right = left + 1; right < result.length; right++) {
+      const a = result[left]!;
+      const b = result[right]!;
+      if (!dependsOn(graph.loaders, a.name, b.name) && !dependsOn(graph.loaders, b.name, a.name)) {
+        assert.ok(graph.names.indexOf(a.name) < graph.names.indexOf(b.name));
+      }
+    }
+  }
+}));
+
+test("loadersFor rejects a requested cycle and an unknown dependency", () => hegel.test((tc) => {
+  const graph = drawLoaderGraph(tc, 2);
+  const index = tc.draw(gs.integers({ minValue: 0, maxValue: graph.loaders.length - 1 }));
+  const loader = graph.loaders[index]!;
+  const cycleTable = "cycle_table";
+  const cycle = graph.loaders.map((candidate) => candidate.name === loader.name
+    ? { ...candidate, tables: [...candidate.tables, cycleTable], after: [...candidate.after, candidate.name] }
+    : candidate,
+  );
+  const unknownTable = "unknown_dependency_table";
+  const unknown = graph.loaders.map((candidate) => candidate.name === loader.name
+    ? { ...candidate, tables: [...candidate.tables, unknownTable], after: [...candidate.after, "not_configured"] }
+    : candidate,
+  );
+
+  assert.throws(() => loadersFor(cycle, [cycleTable]), /cycle/);
+  assert.throws(() => loadersFor(unknown, [unknownTable]), /not configured/);
+}));
+
+test("tablesRead finds tables through filters and subqueries", () => {
+  const raw = migratedDatabase();
+  try {
+    hegel.test((tc) => {
+      const tables = tc.draw(gs.arrays(gs.sampledFrom(schemaTableNames), { minSize: 1, maxSize: schemaTableNames.length, unique: true }));
+      const statement = `select count(*) from ${tables.join(" cross join ")}`;
+      const expected = new Set(tables);
+
+      assert.deepEqual(new Set(tablesRead(raw, statement)), expected);
+      assert.deepEqual(new Set(tablesRead(raw, `${statement} where 1 = 0`)), expected);
+      assert.deepEqual(new Set(tablesRead(raw, `select * from (${statement})`)), expected);
+    });
+  } finally {
+    raw.close();
+  }
 });

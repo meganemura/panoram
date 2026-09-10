@@ -9,3 +9,6 @@ CLAUDE.local.md
 
 node_modules/
 dist/
+
+# The failing-example database of hegel
+.hegel/

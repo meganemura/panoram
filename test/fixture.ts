@@ -1,5 +1,7 @@
 // This fixture fixes a small machine state so tests isolate panoram from external tools.
 // It does not try to reproduce every output form that the real tools can produce.
+import * as hegel from "@hegeldev/hegel";
+import * as gs from "@hegeldev/hegel/generators";
 import type { Exec } from "../core/loader.ts";
 
 export const paths = {
@@ -119,6 +121,43 @@ export function fixtureAgentsWithLinkedWorktree(): SnapshotAgent[] {
 
 export function snapshot(agents: readonly SnapshotAgent[] = fixtureAgents()): string {
   return JSON.stringify({ result: { snapshot: { agents, focused_pane_id: paneIds.betaWorking } } });
+}
+
+export const generatedAgentCwds = ["/cwd/a", "/cwd/b", "/cwd/outside-a", "/cwd/outside-b"] as const;
+
+export type GeneratedSnapshotAgent = {
+  pane_id: string;
+  agent: "claude";
+  agent_status: "working" | "idle" | "waiting";
+  agent_session: { value: string } | null;
+  name: string | null;
+  focused: boolean;
+  cwd: string;
+};
+
+export function drawSnapshotAgents(tc: hegel.TestCase, options: { atMostOneFocused?: boolean } = {}): GeneratedSnapshotAgent[] {
+  const paneIds = tc.draw(gs.arrays(gs.fromRegex("w[0-9]{1,2}:p[0-9]{1,2}"), { minSize: 0, maxSize: 12, unique: true }));
+  const sessionValues = tc.draw(gs.arrays(gs.text({ minSize: 1, codec: "ascii" }).map((value) => `session-${value}`), { minSize: paneIds.length, maxSize: paneIds.length, unique: true }));
+  const focusedPane = options.atMostOneFocused && paneIds.length > 0
+    ? tc.draw(gs.optional(gs.sampledFrom(paneIds)))
+    : null;
+
+  return paneIds.map((paneId, index) => {
+    const session = tc.draw(gs.optional(gs.just(sessionValues[index]!)));
+    return {
+      pane_id: paneId,
+      agent: "claude",
+      agent_status: tc.draw(gs.sampledFrom(["working", "idle", "waiting"] as const)),
+      agent_session: session === null ? null : { value: session },
+      name: tc.draw(gs.optional(gs.text({ codec: "ascii" }))),
+      focused: options.atMostOneFocused ? paneId === focusedPane : tc.draw(gs.booleans()),
+      cwd: tc.draw(gs.sampledFrom(generatedAgentCwds)),
+    };
+  });
+}
+
+export function generatedSnapshot(agents: readonly GeneratedSnapshotAgent[]): string {
+  return JSON.stringify({ result: { snapshot: { agents } } });
 }
 
 export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr?: boolean } = {}): Exec {
