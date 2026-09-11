@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { catalog, reports } from "../catalog.ts";
 import type { Exec } from "../core/loader.ts";
+import { providerQueries } from "../core/providers/public.ts";
 import { runReport } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
 import { fakeExec, fixtureRepo, paneIds, paths } from "./fixture.ts";
@@ -98,4 +99,79 @@ test("a report whose sections read agents runs herdr only", async () => {
   });
   assert.deepEqual(agentOnly.providers.map((provider) => provider.name), ["herdr"]);
   assert.equal(agentOnly.me, paneIds.betaWorking);
+});
+
+test("a failed direct provider makes only its empty section unknown", async () => {
+  const result = await runReport([
+    ["agents", catalog["in-dir"]!.query],
+    ["git", catalog["git-status"]!.query],
+  ], {
+    loaders,
+    exec: fakeExec({ failHerdr: true }),
+    repo: fixtureRepo,
+    env: {},
+    params: { root: paths.alpha },
+  });
+
+  assert.deepEqual(result.sections.agents, []);
+  assert.deepEqual(result.sectionStatus.agents, {
+    providers: ["herdr"],
+    ok: 0,
+    errors: [{ name: "herdr", error: "spawn herdr ENOENT" }],
+  });
+  assert.deepEqual(result.sections.git, [
+    { root: paths.alpha, branch: "main", upstream: "origin/main", ahead: 2, behind: 3, dirty_count: 2, untracked_count: 1 },
+  ]);
+  assert.deepEqual(result.sectionStatus.git, { providers: ["git"], ok: 1, errors: [] });
+});
+
+test("a report section without a provider-owned table stays trusted", async () => {
+  const result = await runReport([["provider_rows", providerQueries.all]], {
+    loaders,
+    exec: fakeExec(),
+    repo: fixtureRepo,
+    env: {},
+    params: {},
+  });
+
+  assert.deepEqual(result.sections.provider_rows, []);
+  assert.deepEqual(result.sectionStatus.provider_rows, { providers: [], ok: 1, errors: [] });
+});
+
+test("a dependency failure stays in report providers for widened scope", async () => {
+  const result = await runReport([["dirty", catalog.dirty!.query]], {
+    loaders,
+    exec: fakeExec({ failRepos: true }),
+    repo: fixtureRepo,
+    env: {},
+    scope: "all",
+    params: {},
+  });
+
+  assert.deepEqual(result.sections.dirty, [
+    { root: paths.alpha, branch: "main", dirty_count: 2, untracked_count: 1 },
+  ]);
+  assert.deepEqual(result.sectionStatus.dirty, { providers: ["git"], ok: 1, errors: [] });
+  assert.deepEqual(result.providers.map(({ name, ok, error }) => ({ name, ok, error })), [
+    { name: "git", ok: 1, error: null },
+    { name: "herdr", ok: 1, error: null },
+    { name: "repos", ok: 0, error: "spawn ghq ENOENT" },
+  ]);
+});
+
+test("report section status accepts arbitrary section names", async () => {
+  const result = await runReport([["__proto__", providerQueries.all]], {
+    loaders,
+    exec: fakeExec(),
+    repo: fixtureRepo,
+    env: {},
+    params: {},
+  });
+
+  assert.equal(Object.getPrototypeOf(result.sections), null);
+  assert.equal(Object.getPrototypeOf(result.sectionStatus), null);
+  assert.equal(Object.hasOwn(result.sections, "__proto__"), true);
+  assert.equal(Object.hasOwn(result.sectionStatus, "__proto__"), true);
+  assert.deepEqual(result.sections["__proto__"], []);
+  assert.deepEqual(result.sectionStatus["__proto__"], { providers: [], ok: 1, errors: [] });
 });

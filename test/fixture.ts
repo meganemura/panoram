@@ -191,7 +191,7 @@ export function repoForRoots(roots: ReadonlySet<string>): Repo {
   };
 }
 
-export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr?: boolean } = {}): Exec {
+export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr?: boolean; failRepos?: boolean } = {}): Exec {
   const agents = options.agents ?? fixtureAgents();
   return async (command, args, cwd) => {
     const invocation = args.join(" ");
@@ -199,7 +199,10 @@ export function fakeExec(options: { agents?: readonly SnapshotAgent[]; failHerdr
       if (options.failHerdr) throw new Error("spawn herdr ENOENT");
       return snapshot(agents);
     }
-    if (command === "ghq" && invocation === "list -p") return `${paths.alpha}\n${paths.beta}\n${paths.gamma}\n`;
+    if (command === "ghq" && invocation === "list -p") {
+      if (options.failRepos) throw new Error("spawn ghq ENOENT");
+      return `${paths.alpha}\n${paths.beta}\n${paths.gamma}\n`;
+    }
     if (command === "git" && invocation === "worktree list --porcelain") return worktreesFor(cwd);
     if (command === "git" && invocation === "--no-optional-locks status --porcelain=2 --branch") return statusFor(cwd);
     if (command === "mise" && invocation === "ls --json") return miseInventory();

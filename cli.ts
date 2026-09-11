@@ -141,6 +141,19 @@ function warn(providers: ProviderRow[]): void {
   for (const p of providers) if (!p.ok) process.stderr.write(`panoram: provider ${p.name} failed: ${p.error}\n`);
 }
 
+export function reportJson(name: string, result: ReportResult): Record<string, unknown> {
+  return {
+    report: name,
+    root: result.params["root"],
+    scope: result.scope,
+    me: result.me,
+    params: result.params,
+    sections: result.sections,
+    section_status: result.sectionStatus,
+    providers: result.providers,
+  };
+}
+
 export type ExitFlags = { expectEmpty: boolean; strict: boolean };
 
 // A failed provider makes every negative gate result unknown, so it wins.
@@ -233,7 +246,7 @@ async function main(argv: string[]): Promise<number> {
   recordCall(process.env, name);
   if (reportResult !== undefined) {
     if (values["tsv"] === true) process.stdout.write(reportTsv(reportResult.sections));
-    else console.log(JSON.stringify({ report: name, root: reportResult.params["root"], scope: reportResult.scope, me: reportResult.me, params: reportResult.params, sections: reportResult.sections, providers: reportResult.providers }, null, 2));
+    else console.log(JSON.stringify(reportJson(name, reportResult), null, 2));
     warn(reportResult.providers);
     return exitCodeFor({ rows: reportResult.sections["agents"] ?? [], providers: reportResult.providers }, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
   }

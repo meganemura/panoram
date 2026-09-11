@@ -10,8 +10,9 @@ import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import { catalog, reports } from "../catalog.ts";
-import { exitCodeFor } from "../cli.ts";
+import { exitCodeFor, reportJson } from "../cli.ts";
 import { callCounts, recordCall } from "../core/calls.ts";
+import type { ReportResult } from "../core/run.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -41,6 +42,32 @@ test("JSON help lists every built-in query with its parameters", async () => {
     params: ["root"],
     sections: reports.here.sections,
     source: "report",
+  });
+});
+
+test("report JSON exposes section_status in the CLI envelope", () => {
+  const result: ReportResult = {
+    sections: { agents: [] },
+    sectionStatus: {
+      agents: { providers: ["herdr"], ok: 0, errors: [{ name: "herdr", error: "spawn herdr ENOENT" }] },
+    },
+    providers: [{ name: "herdr", ok: 0, observed_at: 1, ms: 2, error: "spawn herdr ENOENT" }],
+    scope: "root",
+    me: null,
+    params: { root: "/workspace/example" },
+  };
+
+  assert.deepEqual(reportJson("here", result), {
+    report: "here",
+    root: "/workspace/example",
+    scope: "root",
+    me: null,
+    params: { root: "/workspace/example" },
+    sections: { agents: [] },
+    section_status: {
+      agents: { providers: ["herdr"], ok: 0, errors: [{ name: "herdr", error: "spawn herdr ENOENT" }] },
+    },
+    providers: [{ name: "herdr", ok: 0, observed_at: 1, ms: 2, error: "spawn herdr ENOENT" }],
   });
 });
 

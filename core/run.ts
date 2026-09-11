@@ -12,7 +12,7 @@ import { migrations } from "../migrations/index.ts";
 import { providerCommands, providerQueries, type ProvidersId } from "./providers/public.ts";
 import type { Exec, Loader, Scope } from "./loader.ts";
 import { fsRepo, type Repo } from "./repo.ts";
-import { loadersFor, tablesRead } from "./resolve.ts";
+import { directLoadersFor, loadersFor, tablesRead } from "./resolve.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -55,8 +55,15 @@ export type RunResult<R> = {
 
 export type ReportSection = readonly [name: string, query: Query<string, Entry>];
 
+export type ReportSectionStatus = {
+  providers: string[];
+  ok: 0 | 1;
+  errors: { name: string; error: string }[];
+};
+
 export type ReportResult = {
   sections: Record<string, Record<string, unknown>[]>;
+  sectionStatus: Record<string, ReportSectionStatus>;
   providers: ProviderRow[];
   scope: Scope;
   me: string | null;
@@ -90,8 +97,25 @@ export async function runReport(sections: readonly ReportSection[], options: Run
   const params = [...new Set(sections.flatMap(([, query]) => query.meta.params))];
   const state = await prepare(tables, params, options);
   const values: Record<string, Record<string, unknown>[]> = Object.create(null);
-  for (const [name, query] of sections) values[name] = await state.db.all(query, state.params as never);
-  return { sections: values, ...state };
+  const sectionStatus: Record<string, ReportSectionStatus> = Object.create(null);
+  const providerByName = new Map(state.providers.map((provider) => [provider.name, provider]));
+  for (const [name, query] of sections) {
+    values[name] = await state.db.all(query, state.params as never);
+    const direct = directLoadersFor(options.loaders, query.meta.reads);
+    const errors = direct.flatMap((loader) => {
+      const provider = providerByName.get(loader.name);
+      if (!provider) throw new Error(`provider ${loader.name} has no observation status`);
+      if (provider.ok !== 0) return [];
+      if (provider.error === null) throw new Error(`provider ${loader.name} failed without an error`);
+      return [{ name: provider.name, error: provider.error }];
+    });
+    sectionStatus[name] = {
+      providers: direct.map((loader) => loader.name),
+      ok: errors.length === 0 ? 1 : 0,
+      errors,
+    };
+  }
+  return { sections: values, sectionStatus, ...state };
 }
 
 type RunState = {

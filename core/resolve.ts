@@ -21,6 +21,14 @@ export function tablesRead(raw: DatabaseSync, sql: string): string[] {
   return [...out];
 }
 
+// A report section names only the providers that own tables it reads.
+// Loader dependencies stay out because their status does not describe that
+// section's direct observation.
+export function directLoadersFor(loaders: readonly Loader[], tables: readonly string[]): Loader[] {
+  const read = new Set(tables);
+  return loaders.filter((loader) => loader.tables.some((table) => read.has(table)));
+}
+
 // The loaders whose tables the statement reads, plus the loaders those run
 // after, in an order every `after` is satisfied by. Independent loaders
 // keep the order of the configuration: a `ghq list` that follows git calls

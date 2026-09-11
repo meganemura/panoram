@@ -40,12 +40,27 @@ A report has a report envelope instead of `query` and `rows`:
   "me": "w3S:p1",
   "params": { "root": "/workspace/example", "me": "w3S:p1" },
   "sections": { "agents": [], "git": [] },
-  "providers": []
+  "section_status": {
+    "agents": { "providers": ["herdr"], "ok": 1, "errors": [] },
+    "git": { "providers": ["git"], "ok": 0, "errors": [ { "name": "git", "error": "git executable not found" } ] }
+  },
+  "providers": [
+    { "name": "herdr", "ok": 1, "observed_at": 1789038132395, "ms": 185.2, "error": null },
+    { "name": "git", "ok": 0, "observed_at": 1789038132590, "ms": 4.1, "error": "git executable not found" }
+  ]
 }
 ```
 
 `root` is the resolved root. `sections` keeps the report order and each value
-is the rows of its named query.
+is the rows of its named query. `section_status` uses the same section names.
+Its `providers` list names the providers whose tables the section query reads,
+in provider configuration order. `ok` is 1 when all those providers answered.
+`errors` gives the name and error text of each direct provider that failed.
+A loader dependency is absent unless the section query reads one of its tables.
+A section with no provider-owned tables has an empty provider list, `ok` 1,
+and an empty error list.
+For `--scope agents` and `--scope all`, also read the report-level `providers`.
+A section status does not show whether providers that enumerate roots answered.
 
 `--tsv` prints a header line and the rows, tab separated, null as an empty cell.
 A failed provider goes to standard error as `panoram: provider <name> failed: <error>`.
