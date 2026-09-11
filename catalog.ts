@@ -5,6 +5,7 @@ import type { Entry, Query } from "solarsql";
 import { herdrQueries } from "./providers/herdr/public.ts";
 import { gitQueries } from "./providers/git/public.ts";
 import { miseQueries } from "./providers/mise/public.ts";
+import { brewQueries } from "./providers/brew/public.ts";
 import { repoQueries } from "./providers/repos/public.ts";
 import { reportQueries } from "./providers/report/public.ts";
 import { sessionQueries } from "./providers/sessions/public.ts";
@@ -30,6 +31,8 @@ export const catalog: Readonly<Record<string, Named>> = {
   "repos": { query: repoQueries.all, description: "Every repository ghq manages.", params: [] },
   "tools": { query: miseQueries.installed, description: "Every tool version mise has installed.", params: [] },
   "tools-in-dir": { query: miseQueries.inDir, description: "The tools mise activates in one repository, by its root.", params: ["root"] },
+  "brew-packages": { query: brewQueries.installed, description: "Every installed Homebrew formula and cask version.", params: [] },
+  "installed-software": { query: reportQueries.installedSoftware, description: "Installed versions from mise and Homebrew, with their manager and package kind.", params: [] },
   "sessions": { query: sessionQueries.all, description: "Every Claude Code and Codex session alive now.", params: [] },
   "idle-sessions": { query: sessionQueries.idle, description: "Sessions ordered by how long they have been idle.", params: [] },
   "claude-sessions": { query: sessionQueries.claude, description: "Claude Code sessions alive now, with kind, status, and version.", params: [] },

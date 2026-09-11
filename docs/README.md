@@ -33,3 +33,4 @@ Each ADR describes one decision and its consequences.
 | [0024](adr/0024-columns-take-the-source-name-and-subtypes-hold-the-rest.md) | Columns take the source name, and subtypes hold the rest. |
 | [0025](adr/0025-a-report-is-sections-from-one-database.md) | A report is sections from one database. |
 | [0026](adr/0026-docker-is-observed-through-the-cli.md) | Docker is observed through the CLI. |
+| [0027](adr/0027-homebrew-is-a-machine-inventory.md) | Homebrew is a machine inventory. |

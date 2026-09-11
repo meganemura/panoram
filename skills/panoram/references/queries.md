@@ -81,6 +81,18 @@ A session without a pane appears in `sessions-without-pane`.
 `source` is the path of the mise file that requested the version; a file above the repository counts.
 `active` in `tools` is relative to the directory panoram ran from.
 
+## Installed software (mise, Homebrew)
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `brew-packages` | | `kind`, `name`, `version` |
+| `installed-software` | | `manager`, `kind`, `name`, `version` |
+
+`kind` is `formula` or `cask` for Homebrew and `tool` for mise.
+`installed-software` uses `manager` to keep package identities separate.
+It does not map a package name to an executable name.
+The brew provider uses the local inventory forms in the [Homebrew list command](https://docs.brew.sh/Manpage#list-ls-options-installed_formulainstalled_cask-).
+
 ## GitHub (gh)
 
 | Query | Parameters | Columns |

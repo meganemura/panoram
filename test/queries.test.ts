@@ -251,6 +251,20 @@ test("repository catalog queries preserve their ordered rows", async () => {
     { tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
     { tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", installed: 0 },
   ]);
+  assert.deepEqual((await query("brew-packages")).rows, [
+    { kind: "cask", name: "visual-studio-code", version: "1.104.2,1758661640" },
+    { kind: "formula", name: "jq", version: "1.8.1" },
+    { kind: "formula", name: "openssl@3", version: "3.6.1" },
+    { kind: "formula", name: "openssl@3", version: "3.6.3" },
+  ]);
+  assert.deepEqual((await query("installed-software")).rows, [
+    { manager: "brew", kind: "cask", name: "visual-studio-code", version: "1.104.2,1758661640" },
+    { manager: "brew", kind: "formula", name: "jq", version: "1.8.1" },
+    { manager: "brew", kind: "formula", name: "openssl@3", version: "3.6.1" },
+    { manager: "brew", kind: "formula", name: "openssl@3", version: "3.6.3" },
+    { manager: "mise", kind: "tool", name: "node", version: "22.1.0" },
+    { manager: "mise", kind: "tool", name: "node", version: "24.10.0" },
+  ]);
 });
 
 test("a root-bound query runs git status on that root only by default", async () => {

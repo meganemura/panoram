@@ -9,7 +9,7 @@ Before the agent edits, starts a server, opens a pull request, or takes over old
 
 panoram answers that question.
 It observes existing sources of state, joins their rows in a fresh in-memory SQLite database, prints the result, and exits.
-A provider is one source it observes, such as herdr, git, ghq, mise, gh, Docker, lsof, beads, a session record, or a headsign file.
+A provider is one source it observes, such as herdr, git, ghq, mise, Homebrew, gh, Docker, lsof, beads, a session record, or a headsign file.
 panoram reads those sources.
 It does not change them.
 
@@ -90,7 +90,7 @@ The README is the door: it explains what panoram is, why it helps, how to instal
 panoram requires Node 24.10 or later.
 The build and ad hoc SQL resolver use `setAuthorizer` from `node:sqlite`.
 
-Put the tools you want panoram to observe on `PATH`: `herdr`, `git`, `ghq`, `mise`, `gh` logged in, `docker`, `lsof`, and `bd`.
+Put the tools you want panoram to observe on `PATH`: `herdr`, `git`, `ghq`, `mise`, `brew`, `gh` logged in, `docker`, `lsof`, and `bd`.
 Headsign rows come from files and need no command on `PATH`.
 Session rows come from records under `~/.claude` and `~/.codex`.
 Joining a pane to a session needs herdr's Claude Code and Codex integrations.

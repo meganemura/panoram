@@ -13,7 +13,7 @@ import { migrate } from "solarsql/node";
 
 const tablePool = Array.from({ length: 16 }, (_, index) => `t${index}`);
 const undeclaredTableNames = ["undeclared0", "undeclared1", "undeclared2"];
-const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "sessions", "claude_sessions", "codex_sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "issues", "workflow_runs", "providers"];
+const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "brew_packages", "sessions", "claude_sessions", "codex_sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "issues", "workflow_runs", "providers"];
 
 type LoaderGraph = {
   loaders: Loader[];
@@ -94,6 +94,8 @@ test("tablesRead finds every catalog query's declared tables", () => {
       repos: ["repos"],
       tools: ["tools"],
       "tools-in-dir": ["tool_uses"],
+      "brew-packages": ["brew_packages"],
+      "installed-software": ["brew_packages", "tools"],
       sessions: ["sessions"],
       "idle-sessions": ["sessions"],
       "claude-sessions": ["claude_sessions", "sessions"],

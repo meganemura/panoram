@@ -55,6 +55,13 @@ Under the default scope these hold the repositories that have an agent; under `-
 `tools`: `id` (key, `tool@version`), `tool`, `version`, `install_path?`, `installed`, `active`.
 `tool_uses`: `id` (key, `root tool`), `root`, `tool`, `version`, `source?`, `installed`. One row per root in scope and tool mise activates there.
 
+## `brew_packages` (brew)
+
+`id` (key, `kind:name@version`), `kind`, `name`, `version`.
+One row for each installed Homebrew formula or cask version.
+`kind` is `formula` or `cask`.
+The package name does not identify an executable name.
+
 ## `pull_requests` (github)
 
 `id` (key, `owner/name#number`), `repo`, `root?`, `number`, `title`, `head_branch?`, `head_repo?`, `base_branch?`, `author?`, `is_draft`, `state`, `review_decision?`, `checks?`, `updated_at`, `url`.

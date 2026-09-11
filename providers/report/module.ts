@@ -7,6 +7,12 @@ import { queries } from "solarsql";
 import { generated } from "./solarsql.generated.ts";
 
 export const reportQueries = queries(generated, {
+  // The source and kind keep package identities separate across managers.
+  installedSoftware: `
+    select cast('mise' as text) as manager, cast('tool' as text) as kind, tool as name, version from tools where installed = 1
+    union all
+    select cast('brew' as text) as manager, kind, name, version from brew_packages
+    order by manager, kind, name, version`,
   // An agent can be identified by a pane field or by the session it holds.
   find: `
     select a.pane_id, a.agent, a.agent_status, a.name, a.title, a.root, a.cwd, s.name as session_name

@@ -7,7 +7,7 @@ description: Use when an agent wants to know the state of the developer's machin
 # panoram
 
 panoram answers questions about one developer's machine.
-Each call observes the providers (herdr, git, ghq, mise, gh, Docker, ps, lsof, beads, headsign state files, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
+Each call observes the providers (herdr, git, ghq, mise, Homebrew, gh, Docker, ps, lsof, beads, headsign state files, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
 Nothing is cached, and panoram never writes to a provider.
 
 Call it from anywhere:
@@ -33,6 +33,7 @@ Exact provider JSON names and their state sources: [references/providers.md](ref
 2. **When the user asks what is going on**: `agents-with-sessions` (names, idle time), `working`, `idle-sessions`, `workspaces`.
 3. **When you look for a place to work**: `idle-worktrees` (a worktree with nobody in it), `dirty-unattended` (changes nobody is tending).
 4. **When a tool is missing or the wrong version**: `tools-in-dir`, `missing-tools-with-agents`, `tool-versions-split`.
+   Use `installed-software` to see the installed mise and Homebrew versions together.
 5. **When no query fits**: read the tables in [references/tables.md](references/tables.md) and ask the user to add a query file; how: [references/user-queries.md](references/user-queries.md). A user query shows up in `--help` with its description and is called like a built-in.
 6. **Before you push or open a pull request**: `prs-with-agents` for the branch you are on, then `failing-checks-with-agents`. These read GitHub and take several seconds. Do not use `--scope all` for this check.
 7. **Before you start a server, a watcher, or a build**: `ports-in-dir`, `processes-in-dir`, and `container-ports-in-dir`; use `servers-with-agents` for host listeners. `ports-in-dir` shows the current checkout for the listener's working directory. It does not identify the commit loaded when the server started.
@@ -59,6 +60,8 @@ The table lists the queries the workflow names. Every query, with its parameters
 | `idle-worktrees` | | Linked worktrees with no agent in them. |
 | `dirty-unattended` | | Repositories with uncommitted changes and no agent. |
 | `tools-in-dir` | `--root` | The tools mise activates in one repository. |
+| `brew-packages` | | Installed Homebrew formula and cask versions. |
+| `installed-software` | | Installed versions from mise and Homebrew, kept under their source manager. |
 | `missing-tools-with-agents` | | Repositories with an agent where a requested tool is not installed. |
 | `tool-versions-split` | | Tools whose active version differs between repositories with an agent. |
 | `prs-with-agents` | | Agents whose branch has an open pull request, with its checks. |

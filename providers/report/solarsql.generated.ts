@@ -9,6 +9,10 @@ import type { ProcessesId } from "../processes/solarsql.generated.ts";
 import type { WorkflowRunsId } from "../headsign/solarsql.generated.ts";
 
 export type Generated = {
+  "\n    select cast('mise' as text) as manager, cast('tool' as text) as kind, tool as name, version from tools where installed = 1\n    union all\n    select cast('brew' as text) as manager, kind, name, version from brew_packages\n    order by manager, kind, name, version": {
+    params: {};
+    row: { manager: string | null; kind: string | null; name: string; version: string };
+  };
   "\n    select a.pane_id, a.agent, a.agent_status, a.name, a.title, a.root, a.cwd, s.name as session_name\n    from agents a left join sessions s on s.session_id = a.session_id\n    where (:me is null or a.pane_id <> :me)\n      and (a.name like '%' || :q || '%' or a.title like '%' || :q || '%' or a.root like '%' || :q || '%' or a.cwd like '%' || :q || '%' or s.name like '%' || :q || '%')\n    order by a.pane_id": {
     params: { me: AgentsId | null; q: SqlValue };
     row: { pane_id: AgentsId; agent: string; agent_status: string; name: string | null; title: string | null; root: string | null; cwd: string; session_name: string | null };
@@ -120,6 +124,7 @@ export type Generated = {
 };
 
 export const generated: Meta<Generated> = {
+  "\n    select cast('mise' as text) as manager, cast('tool' as text) as kind, tool as name, version from tools where installed = 1\n    union all\n    select cast('brew' as text) as manager, kind, name, version from brew_packages\n    order by manager, kind, name, version": { params: [], encode: [], json: [], reads: ["brew_packages", "tools"] },
   "\n    select a.pane_id, a.agent, a.agent_status, a.name, a.title, a.root, a.cwd, s.name as session_name\n    from agents a left join sessions s on s.session_id = a.session_id\n    where (:me is null or a.pane_id <> :me)\n      and (a.name like '%' || :q || '%' or a.title like '%' || :q || '%' or a.root like '%' || :q || '%' or a.cwd like '%' || :q || '%' or s.name like '%' || :q || '%')\n    order by a.pane_id": { params: ["me", "q"], encode: [], json: [], reads: ["agents", "sessions"] },
   "\n    select a.pane_id, a.name, a.agent_status, a.root, g.branch, g.dirty_count, g.untracked_count\n    from agents a join git_status g on g.root = a.root\n    where g.dirty_count > 0 and (:me is null or a.pane_id <> :me)\n    order by g.dirty_count desc, a.pane_id": { params: ["me"], encode: [], json: [], reads: ["agents", "git_status"] },
   "\n    select p.repo, p.number, p.title, p.head_branch, p.checks, p.review_decision, p.is_draft, p.url\n    from git_status g join pull_requests p on p.root = g.root and p.head_branch = g.branch and p.head_repo = p.repo\n    where g.root = :root\n    order by p.repo, p.number": { params: ["root"], encode: [], json: [], reads: ["git_status", "pull_requests"] },

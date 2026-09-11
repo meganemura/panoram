@@ -13,6 +13,12 @@ CREATE TABLE agents (
     tab_id text,
     title text
   ) strict;
+CREATE TABLE brew_packages (
+    id text primary key not null,
+    kind text not null check (kind in ('formula', 'cask')),
+    name text not null,
+    version text not null
+  ) strict;
 CREATE TABLE claude_sessions (
     session_id text primary key not null references sessions(session_id),
     kind text,
