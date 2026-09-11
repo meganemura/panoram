@@ -20,6 +20,8 @@ The report-level `providers` list can include dependencies, such as providers th
 | `github_reviews` | Open GitHub pull requests that request the caller's review, with repository, number, title, author, update time, URL, and in-scope repository root when known. |
 | `mise` | Globally known mise tool versions and, for each repository in scope, the active tool requests, source files, and installed state reported by `mise ls --json`. |
 | `brew` | Installed formula and cask versions reported by two local `brew list --versions` calls. |
+| `repository_versions` | Static version declarations and lock evidence from repository roots and declared npm workspaces. The reader starts no process and performs no resolution. |
+| `repository_config_files` | Recognized dependency, language, and tool configuration file names at repository roots and declared npm workspaces. It reads root package.json only for bounded workspace discovery. |
 | `beads` | Open beads issues from repositories in scope that have `.beads`, including title, status, priority, type, assignee, labels, timestamps, and relationship counts. |
 | `docker` | Containers from the current Docker CLI context, including image, lifecycle state, health, Compose identity, repository associations from bind mounts and Compose labels, and exposed or published ports. |
 | `sessions` | Live Claude Code processes and held Codex thread locks, with session id, agent type, process id, working directory, repository root, name, activity times, last transcript branch, and source-specific runtime details. |

@@ -34,6 +34,9 @@ export type Loader = {
   tables: readonly string[];
   // Loaders whose tables this one reads while it loads.
   after: readonly string[];
+  // Some providers need discovery only for a wider scope. Root-bound static
+  // readers can therefore keep their no-process path.
+  afterForScope?(scope: Scope): readonly string[];
   load(ctx: LoadContext): Promise<void>;
   // The caller's own row, when this provider can tell. The core binds it
   // as `:me` to a query that names that parameter.

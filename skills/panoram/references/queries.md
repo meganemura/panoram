@@ -93,6 +93,56 @@ A session without a pane appears in `sessions-without-pane`.
 It does not map a package name to an executable name.
 The brew provider uses the local inventory forms in the [Homebrew list command](https://docs.brew.sh/Manpage#list-ls-options-installed_formulainstalled_cask-).
 
+## Repository versions
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `repository-versions` | `root` | `project_path`, `ecosystem`, `kind`, `dependency_role?`, `origin`, `name`, `requested?`, `locked?`, `source`, `locator?`, `status`, `detail?` |
+| `repository-version-sources` | | Source rows plus unresolved, unsupported, and error evidence in scope. |
+| `shared-dependencies` | | Package identity, repository, checkout, project, declaration, and request-string counts, plus request and role JSON. |
+| `shared-dependency-details` | | The shared counts plus `root`, `project_path`, `dependency_role`, `requested`, `source`, and `locator`. |
+| `dependency-coverage` | | Per-source observed, unsupported, unresolved, and error counts. |
+
+`repository-versions` supports `--scope root` only.
+This root query reads bounded static file evidence and starts no Git, mise, language, or package manager process.
+The root query does not execute scripts from a repository.
+`repository-versions` keeps declaration and lock rows separate, and duplicate npm versions keep their package locations.
+The shared queries use observed npm declarations from manifests.
+`repository_count` counts distinct local Git repositories. `checkout_count` counts inspected roots, including linked worktrees.
+Two linked worktrees alone do not make a dependency shared. Separate clones remain separate local repositories.
+They exclude lock rows and unresolved local, alias, workspace, Git, URL, and tarball references.
+`requested_versions` and `roles` are sorted JSON arrays stored as text.
+Request differences do not state a compatibility conflict.
+`dependency-report` returns `shared`, `coverage`, and `sources` sections from one observation.
+The wide queries and report support `--scope agents` and `--scope all`.
+They inspect only roots supplied by the selected scope. They do not add registered linked worktrees automatically.
+The table reference lists the supported formats, workspace limits, and excluded directories.
+
+## Repository configuration files
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `repository-config-files` | `root` | `root`, `project_path`, `path?`, `format?`, `category?`, `parse_support?`, `observation_kind`, `status`, `detail?` |
+| `repository-config-files-in-scope` | | The same columns for repositories in scope. |
+
+`repository-config-files` supports `--scope root` only. The wide query supports
+`--scope agents` and `--scope all`. Both queries inspect fixed recognized names
+at the root and each root-declared npm workspace. They do not search arbitrary
+files. The inventory reads root `package.json` only to discover declared
+workspaces. It does not open other regular files.
+
+`parse_support` says whether the static version reader has a parser for that
+file name. It does not say that the file is readable or valid. For example, an
+invalid or oversized `package-lock.json` is still an observed inventory file
+with supported parser capability. A later version query can reject its content.
+
+`observation_kind` distinguishes real file observations from workspace
+discovery diagnostics. A symbolic link or special file has `status = skipped`.
+Unsupported workspace syntax and skipped workspace links have `status =
+incomplete`. Hard discovery errors have `status = error`. Incomplete and error
+rows fail the provider, so strict mode rejects partial coverage. A regular file
+with an unsupported format does not fail the provider.
+
 ## GitHub (gh)
 
 | Query | Parameters | Columns |

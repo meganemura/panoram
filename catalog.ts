@@ -6,6 +6,8 @@ import { herdrQueries } from "./providers/herdr/public.ts";
 import { gitQueries } from "./providers/git/public.ts";
 import { miseQueries } from "./providers/mise/public.ts";
 import { brewQueries } from "./providers/brew/public.ts";
+import { repositoryVersionQueries } from "./providers/repository-versions/public.ts";
+import { repositoryConfigFileQueries } from "./providers/repository-config-files/public.ts";
 import { repoQueries } from "./providers/repos/public.ts";
 import { reportQueries } from "./providers/report/public.ts";
 import { sessionQueries } from "./providers/sessions/public.ts";
@@ -17,7 +19,7 @@ import { beadsQueries } from "./providers/beads/public.ts";
 import { headsignQueries } from "./providers/headsign/public.ts";
 
 export type Named = { query: Query<string, Entry>; description: string; params: readonly string[] };
-export type Report = { description: string; sections: readonly (readonly [string, keyof typeof catalog])[] };
+export type Report = { description: string; sections: readonly (readonly [string, keyof typeof catalog])[]; gateSection: string };
 
 export const catalog: Readonly<Record<string, Named>> = {
   "agents": { query: herdrQueries.all, description: "Every agent herdr hosts, with its repository root.", params: [] },
@@ -33,6 +35,13 @@ export const catalog: Readonly<Record<string, Named>> = {
   "tools-in-dir": { query: miseQueries.inDir, description: "The tools mise activates in one repository, by its root.", params: ["root"] },
   "brew-packages": { query: brewQueries.installed, description: "Every installed Homebrew formula and cask version.", params: [] },
   "installed-software": { query: reportQueries.installedSoftware, description: "Installed versions from mise and Homebrew, with their manager and package kind.", params: [] },
+  "repository-versions": { query: repositoryVersionQueries.inDir, description: "Static version declarations and lock evidence in one repository.", params: ["root"] },
+  "repository-config-files": { query: repositoryConfigFileQueries.inDir, description: "Recognized dependency, language, and tool configuration files in one repository.", params: ["root"] },
+  "repository-config-files-in-scope": { query: repositoryConfigFileQueries.inScope, description: "Recognized configuration files and discovery diagnostics in repositories in scope.", params: [] },
+  "repository-version-sources": { query: repositoryVersionQueries.sources, description: "Static version source coverage in repositories in scope.", params: [] },
+  "shared-dependencies": { query: repositoryVersionQueries.sharedDependencies, description: "Direct npm dependencies declared by more than one repository in scope.", params: [] },
+  "shared-dependency-details": { query: repositoryVersionQueries.sharedDependencyDetails, description: "Source evidence for direct npm dependencies shared across repositories in scope.", params: [] },
+  "dependency-coverage": { query: repositoryVersionQueries.coverage, description: "Static source and unresolved-evidence counts for repositories in scope.", params: [] },
   "sessions": { query: sessionQueries.all, description: "Every Claude Code and Codex session alive now.", params: [] },
   "idle-sessions": { query: sessionQueries.idle, description: "Sessions ordered by how long they have been idle.", params: [] },
   "claude-sessions": { query: sessionQueries.claude, description: "Claude Code sessions alive now, with kind, status, and version.", params: [] },
@@ -94,6 +103,12 @@ export const reports = {
       ["issues", "issues"],
       ["workflow", "workflow"],
     ],
+    gateSection: "agents",
+  },
+  "dependency-report": {
+    description: "Shared direct npm dependency requests and static source coverage in one snapshot.",
+    sections: [["shared", "shared-dependencies"], ["coverage", "dependency-coverage"], ["sources", "repository-version-sources"]],
+    gateSection: "shared",
   },
 } as const satisfies Readonly<Record<string, Report>>;
 

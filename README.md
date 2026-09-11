@@ -98,6 +98,13 @@ Joining a pane to a session needs herdr's Claude Code and Codex integrations.
 A missing provider does not make a false row.
 It gives an empty table and a `providers` row that reports the failure.
 
+`repository-versions` reads root files and declared npm workspaces from one repository.
+It does not run Git, mise, a language, or a package manager.
+Its lock rows are file evidence and do not prove installed versions.
+`dependency-report` compares direct npm requests across active repository roots.
+Use `--scope all` to include ghq roots.
+The report includes source coverage and unresolved evidence from the same snapshot.
+
 ## Install
 
 ```sh

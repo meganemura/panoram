@@ -4,7 +4,7 @@
 // solarsql uses the same probe for its boundary check, and it costs microseconds.
 // Boundary: reading the statement only. run.ts orders and runs the loaders.
 import { constants, type DatabaseSync } from "node:sqlite";
-import type { Loader } from "./loader.ts";
+import type { Loader, Scope } from "./loader.ts";
 
 // The tables a statement reads, by name, as the engine sees them.
 export function tablesRead(raw: DatabaseSync, sql: string): string[] {
@@ -35,7 +35,7 @@ export function directLoadersFor(loaders: readonly Loader[], tables: readonly st
 // in many repositories takes ten times longer, so repos sits before herdr
 // there (ADR 0008). A table no loader declares (the core's own, or
 // sqlite's) needs no loader.
-export function loadersFor(loaders: readonly Loader[], tables: readonly string[]): Loader[] {
+export function loadersFor(loaders: readonly Loader[], tables: readonly string[], scope: Scope = "agents"): Loader[] {
   const byName = new Map(loaders.map((l) => [l.name, l]));
   const owner = new Map<string, Loader>();
   for (const l of loaders) for (const t of l.tables) owner.set(t, l);
@@ -44,7 +44,7 @@ export function loadersFor(loaders: readonly Loader[], tables: readonly string[]
     if (trail.includes(l.name)) throw new Error(`loader cycle: ${[...trail, l.name].join(" -> ")}`);
     if (wanted.has(l.name)) return;
     wanted.add(l.name);
-    for (const dep of l.after) {
+    for (const dep of [...l.after, ...(l.afterForScope?.(scope) ?? [])]) {
       const d = byName.get(dep);
       if (!d) throw new Error(`loader ${l.name} runs after ${dep}, which is not configured`);
       want(d, [...trail, l.name]);
@@ -59,7 +59,7 @@ export function loadersFor(loaders: readonly Loader[], tables: readonly string[]
   const placed = new Map<string, Loader>();
   const place = (l: Loader) => {
     if (placed.has(l.name)) return;
-    for (const dep of l.after) place(byName.get(dep)!);
+    for (const dep of [...l.after, ...(l.afterForScope?.(scope) ?? [])]) place(byName.get(dep)!);
     placed.set(l.name, l);
   };
   for (const l of loaders) if (wanted.has(l.name)) place(l);

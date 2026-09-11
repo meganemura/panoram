@@ -141,7 +141,7 @@ async function prepare(tables: readonly string[] | ((raw: DatabaseSync) => reado
     env: options.env ?? process.env,
     repo: options.repo ?? fsRepo,
   };
-  const needed = loadersFor(options.loaders, typeof tables === "function" ? tables(raw) : tables);
+  const needed = loadersFor(options.loaders, typeof tables === "function" ? tables(raw) : tables, scope);
   const providers: ProviderRow[] = [];
   // Loaders run in dependency order, one at a time. A failed loader leaves
   // its tables empty; a loader that runs after it sees the empty tables and

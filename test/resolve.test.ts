@@ -13,7 +13,7 @@ import { migrate } from "solarsql/node";
 
 const tablePool = Array.from({ length: 16 }, (_, index) => `t${index}`);
 const undeclaredTableNames = ["undeclared0", "undeclared1", "undeclared2"];
-const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "brew_packages", "sessions", "claude_sessions", "codex_sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "issues", "workflow_runs", "providers"];
+const schemaTableNames = ["agents", "git_status", "worktrees", "repos", "tools", "tool_uses", "brew_packages", "repository_versions", "sessions", "claude_sessions", "codex_sessions", "pull_requests", "review_requests", "processes", "listeners", "skills", "plugins", "issues", "workflow_runs", "providers"];
 
 type LoaderGraph = {
   loaders: Loader[];
@@ -96,6 +96,13 @@ test("tablesRead finds every catalog query's declared tables", () => {
       "tools-in-dir": ["tool_uses"],
       "brew-packages": ["brew_packages"],
       "installed-software": ["brew_packages", "tools"],
+      "repository-versions": ["repository_versions"],
+      "repository-config-files": ["repository_config_files"],
+      "repository-config-files-in-scope": ["repository_config_files"],
+      "repository-version-sources": ["repository_versions"],
+      "shared-dependencies": ["repository_versions"],
+      "shared-dependency-details": ["repository_versions"],
+      "dependency-coverage": ["repository_versions"],
       sessions: ["sessions"],
       "idle-sessions": ["sessions"],
       "claude-sessions": ["claude_sessions", "sessions"],
@@ -168,6 +175,17 @@ test("loadersFor includes dependencies in configuration order", () => {
   assert.deepEqual(loadersFor(loaders, ["git_status"]).map((loader) => loader.name), ["repos", "herdr", "git"]);
   assert.deepEqual(loadersFor(loaders, ["agents"]).map((loader) => loader.name), ["herdr"]);
   assert.deepEqual(loadersFor(loaders, ["unknown"]).map((loader) => loader.name), []);
+});
+
+test("loadersFor adds only the dependencies for the selected scope", () => {
+  const loaders: Loader[] = [
+    { name: "repos", tables: ["repos"], after: [], async load() {} },
+    { name: "herdr", tables: ["agents"], after: [], async load() {} },
+    { name: "static", tables: ["versions"], after: [], afterForScope: (scope) => scope === "root" ? [] : scope === "agents" ? ["herdr"] : ["herdr", "repos"], async load() {} },
+  ];
+  assert.deepEqual(loadersFor(loaders, ["versions"], "root").map((loader) => loader.name), ["static"]);
+  assert.deepEqual(loadersFor(loaders, ["versions"], "agents").map((loader) => loader.name), ["herdr", "static"]);
+  assert.deepEqual(loadersFor(loaders, ["versions"], "all").map((loader) => loader.name), ["repos", "herdr", "static"]);
 });
 
 test("loadersFor rejects cycles and missing dependencies", () => {

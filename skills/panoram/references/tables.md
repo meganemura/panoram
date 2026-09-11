@@ -62,6 +62,64 @@ One row for each installed Homebrew formula or cask version.
 `kind` is `formula` or `cask`.
 The package name does not identify an executable name.
 
+## `repository_versions` (repository_versions)
+
+`id` (key), `root`, internal `repository_id?`, `project_path`, `ecosystem`, `kind`, `dependency_role?`,
+`origin`, `name`, `requested?`, `locked?`, `source`, `locator?`, `status`, `detail?`.
+
+Each row is one item of static evidence from the file in `source`.
+`root` identifies the inspected checkout. The opaque `repository_id` joins linked worktrees for repository counts and is not query output.
+Directories without Git metadata get separate root-based identities.
+Invalid Git metadata leaves this field null, adds an error row, and makes the provider incomplete.
+`project_path` is the source directory relative to the root.
+`locator` identifies a JSON field, npm package location, lock section, or line.
+Declaration rows fill `requested`; lock rows fill `locked`.
+They stay separate because a declaration does not identify one nested lock entry.
+`status` is `observed`, `unresolved`, `unsupported`, or `error`.
+`dependency_role` identifies runtime, development, optional, and peer requests.
+`origin` identifies a manifest, lock file, version file, or source status row.
+
+The scan supports fixed `.node-version`, `.python-version`, `.ruby-version`,
+and `.tool-versions` values, `package.json`, npm lock versions 2 and 3, and
+bounded sections of `Gemfile.lock`.
+The Ruby `Gemfile`, TOML manifests, and other known lock formats produce
+unsupported source rows. Local, workspace, alias, Git, URL, tarball, and linked references
+produce unresolved rows. A bare Bundler dependency is normalized to `*`.
+
+The reader follows no symbolic link. It accepts regular files up to 2 MiB.
+One scan accepts up to 16 MiB of source data and emits at most 50,000 evidence rows.
+The reader uses one extra byte to detect each byte-limit overflow.
+A row-limit failure adds one final diagnostic row.
+It reads known source names at the root and in npm workspaces declared by the root.
+It does not use workspace declarations from nested packages.
+Workspace patterns support literal segments, `*`, `?`, and `**`.
+Discovery visits at most 2,000 entries and descends through 12 directory levels.
+It accepts at most 100 workspace patterns and 500 workspace projects.
+It skips `.git`, `.claude`, `.claude-team`, `.codex`, `.agents`, `.hegel`,
+`node_modules`, `vendor`, `dist`, `build`, `target`, `.cache`, `.next`,
+`.turbo`, and `coverage` directories.
+An error row means the observation is incomplete and the provider has `ok = 0`.
+Lock rows describe lock file evidence. They do not prove an installed package or runtime.
+
+## `repository_config_files` (repository_config_files)
+
+`id` (key), `root`, `project_path`, `path?`, `format?`, `category?`,
+`parse_support?`, `observation_kind`, `status`, `detail?`.
+
+File rows inventory a fixed catalog of dependency, language, and tool source
+names. Categories are `manifest`, `lock`, `version-file`, and `tool-config`.
+Parser support is a capability of the static version reader. It does not prove
+that present file content is readable or valid. The inventory does not read
+listed file bodies. It reads the root `package.json` with the version reader's
+bounds and file safety checks only to discover declared npm workspaces.
+
+The inventory checks all recognized names at the root and in each declared
+workspace. It does not recurse outside workspace declarations. Discovery rows
+carry null format, category, and parser support, so they cannot look like real
+files. `incomplete` records unsupported workspace syntax or a skipped workspace
+link. `error` records a hard discovery failure. Both make provider status fail.
+Regular unsupported formats remain successful file observations.
+
 ## `pull_requests` (github)
 
 `id` (key, `owner/name#number`), `repo`, `root?`, `number`, `title`, `head_branch?`, `head_repo?`, `base_branch?`, `author?`, `is_draft`, `state`, `review_decision?`, `checks?`, `updated_at`, `url`.

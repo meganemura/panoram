@@ -14,6 +14,7 @@ import { catalog, reportParams, reports } from "./catalog.ts";
 import { callCounts, callsPath, recordCall } from "./core/calls.ts";
 import type { Scope } from "./core/loader.ts";
 import { runQuery, runReport, runSql, type ProviderRow, type ReportResult, type RunResult } from "./core/run.ts";
+import { fsRepo } from "./core/repo.ts";
 import { loadUserQueries, type UserQuery } from "./core/user-queries.ts";
 import { loaders } from "./panoram.config.ts";
 
@@ -124,6 +125,13 @@ function toplevel(dir: string): string {
   }
 }
 
+// Static repository inspection must not start Git before it reads files.
+// This special path keeps all other query root behavior unchanged.
+async function staticToplevel(dir: string): Promise<string> {
+  const absolute = resolve(dir);
+  return await fsRepo.rootOf(absolute) ?? absolute;
+}
+
 function tsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
   const keys = Object.keys(rows[0]!);
@@ -195,6 +203,20 @@ async function main(argv: string[]): Promise<number> {
     console.error(`panoram: --scope is root, agents, or all, not ${scope}`);
     return 2;
   }
+  const rootOnlyRepositoryQueries = new Set([catalog["repository-versions"], catalog["repository-config-files"]]);
+  if (named !== undefined && rootOnlyRepositoryQueries.has(named) && scope !== undefined && scope !== "root") {
+    console.error(`panoram: ${requestedName} only supports --scope root`);
+    return 2;
+  }
+  const wideRepositoryQueries = new Set([
+    catalog["repository-version-sources"], catalog["shared-dependencies"],
+    catalog["shared-dependency-details"], catalog["dependency-coverage"],
+    catalog["repository-config-files-in-scope"],
+  ]);
+  if (scope === "root" && (report === reports["dependency-report"] || (named !== undefined && wideRepositoryQueries.has(named)))) {
+    console.error(`panoram: ${requestedName} supports --scope agents or all`);
+    return 2;
+  }
   // Keep the same parameter names intact when the CLI passes them to SQLite.
   const params: Record<string, unknown> = Object.create(null);
   if (me !== undefined) params["me"] = me === "" ? null : me;
@@ -232,7 +254,9 @@ async function main(argv: string[]): Promise<number> {
       }
       result = await runSql(userQuery.sql, { loaders, scope, params });
     } else if (named) {
-      if (named.params.includes("root")) params["root"] = toplevel(root ?? process.cwd());
+      if (named.params.includes("root")) params["root"] = rootOnlyRepositoryQueries.has(named)
+        ? await staticToplevel(root ?? process.cwd())
+        : toplevel(root ?? process.cwd());
       for (const parameter of named.params) {
         if (parameter === "root" || parameter === "me") continue;
         const value = textOption(values, parameter);
@@ -248,7 +272,7 @@ async function main(argv: string[]): Promise<number> {
     if (values["tsv"] === true) process.stdout.write(reportTsv(reportResult.sections));
     else console.log(JSON.stringify(reportJson(name, reportResult), null, 2));
     warn(reportResult.providers);
-    return exitCodeFor({ rows: reportResult.sections["agents"] ?? [], providers: reportResult.providers }, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
+    return exitCodeFor({ rows: reportResult.sections[report!.gateSection] ?? [], providers: reportResult.providers }, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
   }
   if (result === undefined) throw new Error(`no result for ${name}`);
   if (values["tsv"] === true) {

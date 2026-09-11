@@ -34,3 +34,5 @@ Each ADR describes one decision and its consequences.
 | [0025](adr/0025-a-report-is-sections-from-one-database.md) | A report is sections from one database. |
 | [0026](adr/0026-docker-is-observed-through-the-cli.md) | Docker is observed through the CLI. |
 | [0027](adr/0027-homebrew-is-a-machine-inventory.md) | Homebrew is a machine inventory. |
+| [0028](adr/0028-repository-versions-are-static-file-evidence.md) | Repository versions are static file evidence. |
+| [0029](adr/0029-repository-config-files-are-a-bounded-inventory.md) | Repository configuration files are a bounded inventory. |

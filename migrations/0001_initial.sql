@@ -161,6 +161,35 @@ CREATE TABLE repos (
     owner text not null,
     name text not null
   ) strict;
+CREATE TABLE repository_config_files (
+    id text primary key not null,
+    root text not null,
+    project_path text not null,
+    path text,
+    format text,
+    category text check (category in ('manifest', 'lock', 'version-file', 'tool-config') or category is null),
+    parse_support text check (parse_support in ('supported', 'unsupported') or parse_support is null),
+    observation_kind text not null check (observation_kind in ('file', 'discovery')),
+    status text not null check (status in ('observed', 'skipped', 'incomplete', 'error')),
+    detail text
+  ) strict;
+CREATE TABLE repository_versions (
+    id text primary key not null,
+    root text not null,
+    repository_id text,
+    project_path text not null,
+    ecosystem text not null,
+    kind text not null,
+    dependency_role text check (dependency_role in ('runtime', 'development', 'optional', 'peer') or dependency_role is null),
+    origin text not null check (origin in ('manifest', 'lock', 'version-file', 'source')),
+    name text not null,
+    requested text,
+    locked text,
+    source text not null,
+    locator text,
+    status text not null check (status in ('observed', 'unresolved', 'unsupported', 'error')),
+    detail text
+  ) strict;
 CREATE TABLE review_requests (
     id text primary key not null,
     repo text not null,

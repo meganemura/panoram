@@ -2,7 +2,7 @@
 // They do not run a query, so they cannot start a real provider tool.
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -97,6 +97,108 @@ test("an invalid scope exits with status 2", async () => {
     execFileAsync(process.execPath, ["cli.ts", "--sql", "select 1 as x", "--scope", "invalid"], { cwd: process.cwd(), encoding: "utf8" }),
     (error: NodeJS.ErrnoException & { code?: number }) => error.code === 2,
   );
+});
+
+test("root static queries discover a root without starting repository tools", async () => {
+  const root = mkdtempSync(join(tmpdir(), "panoram-cli-static-"));
+  const bin = join(root, "bin");
+  const nested = join(root, "packages", "app");
+  const marker = join(root, "process-marker");
+  mkdirSync(join(root, ".git"));
+  mkdirSync(bin);
+  mkdirSync(nested, { recursive: true });
+  writeFileSync(join(root, "package.json"), JSON.stringify({ scripts: { postinstall: `touch ${marker}` }, dependencies: { alpha: "^1" } }));
+  for (const command of ["git", "mise", "npm", "node", "ruby", "bundle"]) {
+    const path = join(bin, command);
+    writeFileSync(path, `#!/bin/sh\nprintf '%s\\n' ${command} >> '${marker}'\nexit 91\n`);
+    chmodSync(path, 0o755);
+  }
+  try {
+    for (const name of ["repository-versions", "repository-config-files"]) {
+      const { stdout } = await execFileAsync(process.execPath, [join(process.cwd(), "cli.ts"), name], {
+        cwd: nested,
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, XDG_STATE_HOME: join(root, "state") },
+      });
+      const result = JSON.parse(stdout);
+      assert.equal(result.params.root, realpathSync(root));
+      assert.ok(result.rows.length > 0);
+    }
+    assert.throws(() => readFileSync(marker), { code: "ENOENT" });
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a linked worktree remains one selected static query root", async () => {
+  const base = mkdtempSync(join(tmpdir(), "panoram-cli-worktree-"));
+  const main = join(base, "main");
+  const linked = join(base, "linked");
+  const gitdir = join(main, ".git", "worktrees", "linked");
+  mkdirSync(gitdir, { recursive: true });
+  mkdirSync(linked);
+  writeFileSync(join(linked, ".git"), `gitdir: ${gitdir}\n`);
+  writeFileSync(join(gitdir, "commondir"), "../..\n");
+  writeFileSync(join(linked, "package.json"), JSON.stringify({ dependencies: { alpha: "^1" } }));
+  try {
+    const { stdout } = await execFileAsync(process.execPath, [join(process.cwd(), "cli.ts"), "repository-versions"], {
+      cwd: linked, encoding: "utf8", env: { ...process.env, XDG_STATE_HOME: join(base, "state") },
+    });
+    const result = JSON.parse(stdout);
+    assert.equal(result.params.root, realpathSync(linked));
+    assert.ok(result.rows.some((row: { name: string }) => row.name === "alpha"));
+    assert.deepEqual(result.providers.map(({ name, ok }: { name: string; ok: number }) => [name, ok]), [["repository_versions", 1]]);
+  } finally { rmSync(base, { recursive: true, force: true }); }
+});
+
+test("root static queries reject a wider scope before loading providers", async () => {
+  for (const name of ["repository-versions", "repository-config-files"]) {
+    await assert.rejects(
+      execFileAsync(process.execPath, ["cli.ts", name, "--scope", "agents"], { cwd: process.cwd(), encoding: "utf8" }),
+      (error: NodeJS.ErrnoException & { code?: number; stderr?: string }) => error.code === 2 && /only supports --scope root/.test(error.stderr ?? ""),
+    );
+  }
+});
+
+test("wide dependency commands reject root scope before loading providers", async () => {
+  for (const name of ["repository-version-sources", "shared-dependencies", "shared-dependency-details", "dependency-coverage", "repository-config-files-in-scope", "dependency-report"]) {
+    await assert.rejects(
+      execFileAsync(process.execPath, ["cli.ts", name, "--scope", "root"], { cwd: process.cwd(), encoding: "utf8" }),
+      (error: NodeJS.ErrnoException & { code?: number; stderr?: string }) => error.code === 2 && /supports --scope agents or all/.test(error.stderr ?? ""),
+    );
+  }
+});
+
+test("dependency-report gates expect-empty on shared dependencies", async () => {
+  const base = mkdtempSync(join(tmpdir(), "panoram-cli-dependencies-"));
+  const first = join(base, "first");
+  const second = join(base, "second");
+  const bin = join(base, "bin");
+  mkdirSync(first);
+  mkdirSync(second);
+  mkdirSync(bin);
+  mkdirSync(join(first, ".git"));
+  mkdirSync(join(second, ".git"));
+  writeFileSync(join(first, "package.json"), JSON.stringify({ dependencies: { alpha: "^1" } }));
+  writeFileSync(join(second, "package.json"), JSON.stringify({ dependencies: { alpha: "^2" } }));
+  const herdr = join(bin, "herdr");
+  const snapshot = (roots: string[]) => JSON.stringify({ result: { snapshot: { agents: roots.map((cwd, index) => ({ pane_id: String(index), agent: "codex", agent_status: "working", cwd })) } } });
+  const writeHerdr = (roots: string[]) => {
+    writeFileSync(herdr, `#!/bin/sh\nprintf '%s\\n' '${snapshot(roots)}'\n`);
+    chmodSync(herdr, 0o755);
+  };
+  const options = { cwd: process.cwd(), encoding: "utf8" as const, env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, XDG_STATE_HOME: join(base, "state") } };
+  try {
+    writeHerdr([first, second]);
+    await assert.rejects(
+      execFileAsync(process.execPath, ["cli.ts", "dependency-report", "--expect-empty"], options),
+      (error: NodeJS.ErrnoException & { code?: number; stdout?: string }) => error.code === 3 && JSON.parse(error.stdout!).sections.shared.length === 1,
+    );
+    writeHerdr([first]);
+    const { stdout } = await execFileAsync(process.execPath, ["cli.ts", "dependency-report", "--expect-empty"], options);
+    const result = JSON.parse(stdout);
+    assert.equal(result.sections.shared.length, 0);
+    assert.ok(result.sections.coverage.length > 0);
+    assert.ok(result.sections.sources.length > 0);
+  } finally { rmSync(base, { recursive: true, force: true }); }
 });
 
 function resultForExitCode(rows: number, oks: readonly number[]) {

@@ -52,7 +52,8 @@ A report has a report envelope instead of `query` and `rows`:
 }
 ```
 
-`root` is the resolved root. `sections` keeps the report order and each value
+`root` is the resolved root for a root-bound report. It is absent for a wide report.
+`sections` keeps the report order and each value
 is the rows of its named query. `section_status` uses the same section names.
 Its `providers` list names the providers whose tables the section query reads,
 in provider configuration order. `ok` is 1 when all those providers answered.
@@ -83,12 +84,12 @@ derives from `updated_at`.
 | `--root DIR` | The repository for a query or report that takes `root`. Default: the git toplevel of the current directory, or the directory itself outside a repository. A query that takes `--root` runs the loaders on that root alone by default (`--scope root`); `--scope agents` widens to every repository with an agent, `--scope all` to every ghq repository. |
 | `--scope root` | Repository-scoped loaders run on the root bound to the query. |
 | `--scope agents` | Repository-scoped loaders run on the repositories that have an agent. |
-| `--scope all` | git, mise, processes, beads, headsign, skills, and github also run on every ghq repository. Several seconds. |
+| `--scope all` | git, mise, repository_versions, processes, beads, headsign, skills, and github also run on every ghq repository. Several seconds. |
 | `--me PANE` | The pane to exclude. Default: the caller's own pane, from `HERDR_PANE_ID`, then `CLAUDE_CODE_SESSION_ID` matched to a session, then the pane herdr has in focus. `--me ""` keeps every pane. |
 | `--tsv` | Rows only, tab separated. A report prints named sections. |
 | `--json` | The default. |
 | `--<name> VALUE` | A parameter of a built-in or user query, bound as text. |
-| `--expect-empty` | Exit 3 after output when the query returned rows. For `here`, it reads the `agents` section only. |
+| `--expect-empty` | Exit 3 after output when the query or report gate section returned rows. `here` uses `agents`. `dependency-report` uses `shared`. |
 | `--strict` | Exit 4 after output when a provider did not answer. |
 | `--help` | The built-in and user queries, then reports, with descriptions. `--help --json` prints their names, descriptions, parameters, sources, and report sections as JSON. |
 
