@@ -123,7 +123,7 @@ test("tablesRead finds every catalog query's declared tables", () => {
       "prs-with-agents": ["agents", "git_status", "pull_requests"],
       "failing-checks-with-agents": ["agents", "git_status", "pull_requests"],
       "review-requests-with-agents": ["agents", "review_requests"],
-      "ports-in-dir": ["listeners"],
+      "ports-in-dir": ["git_status", "listeners", "processes", "worktrees"],
       "servers-with-agents": ["agents", "listeners"],
       "long-running-without-agents": ["agents", "processes"],
       "duplicate-skill-names": ["skills"],

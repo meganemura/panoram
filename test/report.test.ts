@@ -83,7 +83,7 @@ test("here runs its ordered sections after one union of providers", async () => 
     git: { providers: ["git"], ok: 1, errors: [] },
     worktrees: { providers: ["git"], ok: 1, errors: [] },
     pull_requests: { providers: ["github", "git"], ok: 1, errors: [] },
-    ports: { providers: ["processes"], ok: 1, errors: [] },
+    ports: { providers: ["git", "processes"], ok: 1, errors: [] },
     processes: { providers: ["processes"], ok: 1, errors: [] },
     containers: { providers: ["docker"], ok: 1, errors: [] },
     container_ports: { providers: ["docker"], ok: 1, errors: [] },

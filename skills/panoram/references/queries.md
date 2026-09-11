@@ -100,11 +100,11 @@ A session without a pane appears in `sessions-without-pane`.
 | --- | --- | --- |
 | `processes-in-dir` | `root` | `pid`, `ppid`, `executable`, `command`, `cwd`, `elapsed_s`, `rss_kb`, `cpu` |
 | `listening-ports` | | `pid`, `address`, `port`, `cwd?`, `root?`, `command?` |
-| `ports-in-dir` | `root` | `pid`, `address`, `port`, `cwd?`, `root?`, `command?` |
+| `ports-in-dir` | `root` | `pid`, `address`, `port`, `cwd?`, `root?`, `command?`, `head?`, `branch?`, `dirty_count?`, `untracked_count?`, `elapsed_s?` |
 | `servers-with-agents` | | `root`, `port`, `address`, `pid`, `command?`, `agents` |
 | `long-running-without-agents` | | `root`, `pid`, `executable`, `elapsed_s`, `rss_kb` |
 
-`elapsed_s` is process age in seconds. `rss_kb` is resident memory in KiB. `cpu` is the current CPU percentage from ps. A listener can have null location fields when lsof cannot examine its cwd or it is outside the roots in scope. `agents` excludes `me`.
+`elapsed_s` is process age in seconds. `rss_kb` is resident memory in KiB. `cpu` is the current CPU percentage from ps. A listener can have null location fields when lsof cannot examine its cwd or it is outside the roots in scope. `ports-in-dir` reports the checkout observed for the process working directory at call time. It does not prove which commit the running process loaded at startup, because the checkout can change after launch. `agents` excludes `me`.
 
 ## Docker
 

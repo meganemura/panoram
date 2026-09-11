@@ -112,8 +112,12 @@ export const reportQueries = queries(generated, {
     group by p.id order by p.updated_at desc`,
   // Ports inside the selected repository.
   portsInDir: `
-    select pid, address, port, cwd, root, command
-    from listeners where root = :root order by port`,
+    select l.pid, l.address, l.port, l.cwd, l.root, l.command, w.head, g.branch, g.dirty_count, g.untracked_count, p.elapsed_s
+    from listeners l
+    left join processes p on p.pid = l.pid and p.root = l.root
+    left join git_status g on g.root = l.root
+    left join worktrees w on w.path = l.root
+    where l.root = :root order by l.port`,
   // A server and the agents whose repository it occupies.
   serversWithAgents: `
     select l.root, l.port, l.address, l.pid, l.command, cast(count(a.pane_id) as integer) as agents

@@ -87,6 +87,27 @@ function githubExec(fork = false): Exec {
   };
 }
 
+function portExec(): Exec {
+  const base = fakeExec();
+  return async (command, args, cwd, options) => {
+    if (command === "ps") {
+      assert.deepEqual(args, ["-axo", "pid,ppid,pgid,etime,rss,pcpu,command"]);
+      return [
+        "201 1 201 03:04 100 0.1 /usr/local/bin/node server.js",
+      ].join("\n");
+    }
+    if (command === "lsof" && args.join(" ") === `-a -d cwd -u ${process.getuid!()} -Fpn`) {
+      assert.deepEqual(options, { exitCodes: [1] });
+      return ["p201", "fcwd", `n${paths.alpha}/app`, "p202", "fcwd", `n${paths.alpha}/other`].join("\n");
+    }
+    if (command === "lsof" && args.join(" ") === `-a -nP -iTCP -sTCP:LISTEN -u ${process.getuid!()} -Fpn`) {
+      assert.deepEqual(options, { exitCodes: [1] });
+      return ["p201", "n127.0.0.1:3000", "p202", "n127.0.0.1:3001"].join("\n");
+    }
+    return base(command, args, cwd, options);
+  };
+}
+
 test("agent catalog queries use repository roots and exclude the focused caller", async () => {
   assert.deepEqual((await query("agents")).rows, [
     {
@@ -352,4 +373,32 @@ test("report catalog queries join the fixture tables", async () => {
     { repo: "example/alpha", number: 7, title: "Alpha", head_branch: "main", checks: "pass", review_decision: "APPROVED", is_draft: 0, url: "https://example.test/example/alpha/7" },
   ]);
   assert.deepEqual((await query("branch-pull-requests", "agents", { root: paths.alpha }, githubExec(true))).rows, []);
+  assert.deepEqual((await query("ports-in-dir", undefined, { root: paths.alpha }, portExec())).rows, [
+    {
+      pid: 201,
+      address: "127.0.0.1",
+      port: 3000,
+      cwd: `${paths.alpha}/app`,
+      root: paths.alpha,
+      command: "/usr/local/bin/node server.js",
+      head: "abc",
+      branch: "main",
+      dirty_count: 2,
+      untracked_count: 1,
+      elapsed_s: 184,
+    },
+    {
+      pid: 202,
+      address: "127.0.0.1",
+      port: 3001,
+      cwd: `${paths.alpha}/other`,
+      root: paths.alpha,
+      command: null,
+      head: "abc",
+      branch: "main",
+      dirty_count: 2,
+      untracked_count: 1,
+      elapsed_s: null,
+    },
+  ]);
 });

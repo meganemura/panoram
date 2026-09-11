@@ -67,7 +67,7 @@ export const catalog: Readonly<Record<string, Named>> = {
   "prs-with-agents": { query: reportQueries.prsWithAgents, description: "Agents whose branch has an open pull request, with its checks.", params: [] },
   "failing-checks-with-agents": { query: reportQueries.failingChecksWithAgents, description: "Open pull requests with failing checks in repositories where an agent works.", params: [] },
   "review-requests-with-agents": { query: reportQueries.reviewRequestsWithAgents, description: "Requested reviews, with the number of agents in that repository.", params: [] },
-  "ports-in-dir": { query: reportQueries.portsInDir, description: "Listening ports of processes inside one repository.", params: ["root"] },
+  "ports-in-dir": { query: reportQueries.portsInDir, description: "Listening ports of processes inside one repository, with checkout context.", params: ["root"] },
   "servers-with-agents": { query: reportQueries.serversWithAgents, description: "Listening processes in repositories where an agent works.", params: [] },
   "long-running-without-agents": { query: reportQueries.longRunningWithoutAgents, description: "Processes older than an hour in repositories with no agent.", params: [] },
   "duplicate-skill-names": { query: reportQueries.duplicateSkillNames, description: "Skill names that come from more than one source.", params: [] },
