@@ -29,6 +29,7 @@ JSON is the default output:
 A provider that failed leaves its tables empty, so a join through them gives no rows.
 Treat empty `rows` next to a failed provider as "unknown", not as "none".
 A provider the query does not read is absent from `providers`.
+The exact provider names are listed in [providers.md](providers.md).
 
 A report has a report envelope instead of `query` and `rows`:
 

@@ -2,77 +2,119 @@
 
 [English](README.md)
 
-panoram は、開発者の機械 1 台の状態について答える。
-どのコーディングエージェントがどこで動いているか、どのリポジトリが汚れているか、誰もいない worktree はどれか、止まっている session はどれか、リポジトリごとに有効なツールの版は何か。
-panoram は自分のデータを持たない問い合わせ層である。
-呼ばれるたびに provider をその瞬間に観測し、in-memory の SQLite で結合し、行を印字する。
-第一の読み手はコーディングエージェントで、第二の読み手はその隣で働く人間である。
+panoram は、コーディングエージェントに開発者の機械 1 台の現在の見取り図を渡す。
+エージェントは git、GitHub、プロセス、terminal session、worktree の道具をすでに呼べる。
+しかし、それぞれの道具が見せるのは一部分である。
+編集する前、server を起動する前、pull request を開く前、止まった作業を引き継ぐ前に、エージェントは機械とリポジトリを誰が何に使っているかを知る必要がある。
+
+panoram はその問いに答える。
+既存の状態源を観測し、その行を新しい in-memory SQLite database で結合し、結果を印字して終了する。
+**provider** は panoram が観測する状態源である。
+たとえば herdr、git、ghq、mise、gh、Docker、lsof、beads、session の記録、headsign の file が provider になる。
+panoram は provider を読む。
+provider の状態は変えない。
 
 ```sh
+panoram here
 panoram in-dir --tsv
 panoram agents-with-sessions
 panoram --help
 ```
 
-## なぜ panoram か
+## 最初の使い方
 
-**道具をまたぐ問いに答える。**
-herdr はどの pane でエージェントが動いているかを知り、git はどの checkout が汚れているかを知り、gh はどのブランチの check が落ちているかを知る。
-しかし「check が落ちているブランチで作業中のエージェント」は、どの道具も 1 つでは答えられない。
-panoram はそれらの記録をリポジトリの root という 1 つの鍵で結合するので、`failing-checks-with-agents`、`agents-in-dirty-repos`、`idle-worktrees`、`sessions-without-pane` はそれぞれ 1 クエリである。
+リポジトリで作業を始める前に、この command を実行する。
 
-**問いを出したエージェント自身のために答える。**
-コマンドは呼び手の pane を環境から解決して結果から除く。
-エージェントが自分のいるリポジトリで `panoram in-dir --tsv` を打てば、それは「他に誰がここにいるか」と読める。
-エージェントが最初に読む文書は README ではなく skill である。
+```sh
+panoram here
+```
 
-**答えは常に今であり、見えなかったものを言う。**
-呼び出しごとに新しい in-memory データベースを作り、キャッシュを持たない。
-封筒の `providers` 行が、そのクエリが触った provider ごとに `ok`、`observed_at`、エラーを運ぶ。
-だから `ok` が 0 の隣の空の結果は「無い」ではなく「分からない」と読める。
-session は検索せず観測する。
-生きているプロセスだけを見て、transcript は末尾の 8 KB だけを読み、ギガバイト単位の履歴は読まない。
+`here` は 1 つのリポジトリについての report である。
+同じリポジトリにいる他のエージェント、現在の git state、linked worktree、branch の pull request、listening port、local process、Docker container と port、mise tool、open beads issue、headsign workflow state を示す。
+エージェントはその結果から次の行動を選べる。
 
-**問いは読む分だけ払う。**
-文が読む表が、走る provider を決める。
-`dirty` はエージェントのいるリポジトリで git を走らせ、それ以外は何もしない。
-`review-requests` は GitHub の検索を 1 回だけ走らせ、`git status` は走らせない。
-`--sql` の ad hoc な SQL も、`~/.config/panoram/queries/` に置いた自分の SQL ファイルも、同じ経路で解決され、`--help` に並ぶ。
+- 他のエージェントが同じリポジトリで作業していれば待つ。
+- 誰もいない worktree を使うか、使用中の worktree を避ける。
+- 編集や review の前に dirty file に気付く。
+- local server が使っている port を避ける。
+- リポジトリに結び付いた container や Docker-published port を見る。
+- check を走らせる前に、このリポジトリの missing tool を見る。
+- 作業を続ける前に open issue と workflow state を読む。
+- merge を求める前に pull request の failing check を見る。
 
-**行の形は型であり、表は自分の問いのために文書化されている。**
-provider はそれぞれ 1 つの solarsql module で、自分の表を所有する。
-結合は report module だけが持つ。
-build は列ごとの型を SQLite に問い、他の module の表に手を伸ばすクエリを拒む。
-表と列は [tables.md](skills/panoram/references/tables.md) にあるので、新しい問いは panoram の変更ではなく SQL ファイル 1 つで足りる。
+エージェントを列挙する query は、既定で呼び手自身を除く。
+pane の中にいるエージェントにとって、`panoram here` と `panoram in-dir` は「他に誰がここにいるか」という意味になる。
+この性質により、結果を gate として使える。
 
-**panoram でないもの。**
-ダッシュボードではない。
-呼び出しごとに行を印字して終了する。
-操作の道具ではない。
-provider には書き込まず、状態を持つ道具が動詞を持つ。
-履歴ではない。
-過去の session、閉じた issue、merge 済みの pull request は他の道具の仕事である。
+```sh
+panoram here --expect-empty --strict
+```
+
+`here` では、`--expect-empty` は `agents` section を検査する。
+`--strict` は、答えなかった provider があれば失敗する。
+
+## エージェントに向いている理由
+
+エージェントには画面より構造化された事実が要る。
+panoram は既定で JSON を返すので、エージェントは terminal text を parse せずに rows、sections、provider status、解決済みの caller identity を読める。
+人間が小さな表で見たいときは TSV も使える。
+
+エージェントは、道具をまたぐ問いを必要とすることが多い。
+git は checkout が dirty かを言える。
+herdr はどの pane でエージェントが動いているかを言える。
+gh は branch の check が落ちているかを言える。
+panoram はそれらの事実を repository root で結合するので、`agents-in-dirty-repos`、`failing-checks-with-agents`、`idle-worktrees`、`servers-with-agents` は直接呼べる query になる。
+
+エージェントは、問いに必要な分だけ払えばよい。
+query が読む table から、読み込む provider が決まる。
+`tools-in-dir` は GitHub を呼ばない。
+`review-requests` は `git status` を走らせない。
+ad hoc SQL と user query file も同じ provider 解決を使う。
+
+エージェントには、観測が不完全だったかどうかも必要である。
+呼び出しごとに空の database から始めるので、古い cache はない。
+JSON envelope は、実行した provider ごとに `ok`、`observed_at`、`ms`、`error` を持つ `providers` を含む。
+provider が失敗した場合、その table は空になり、provider row が失敗を示す。
+失敗した provider の隣にある空の rows は「ない」ではなく「分からない」と読む。
+
+report は section ごとの信頼情報も返す。
+`here` は `sections`、`section_status`、report level の `providers` を返す。
+それぞれの `section_status` は、その section が直接読む provider と、それらが答えたかを示す。
+`--scope agents` や `--scope all` で範囲を広げたときは、report level の `providers` も読む。
+root の列挙が別の provider に依存することがあるためである。
+
+エージェントには、動く瞬間に読む手順も要る。
+その workflow は [skills/panoram/SKILL.md](skills/panoram/SKILL.md) にある。
+README は入口である。
+panoram が何で、なぜ役に立ち、どう導入し、次に何を読むかを説明する。
 
 ## 必要なもの
 
-Node 24.10 以降。
-build と ad hoc SQL の解決が node:sqlite の `setAuthorizer` を使う。
-`PATH` に `herdr`、`git`、`ghq`、`mise`、`lsof`、`gh`(ログイン済み)、`bd`。
-session の provider は `~/.claude` と `~/.codex` の記録を読む。
-pane と session の結合には herdr の Claude Code と Codex の integration が要る。
-無い provider は空の表になり、`providers` 行がそう言う。
+panoram には Node 24.10 以降が要る。
+build と ad hoc SQL の解決が `node:sqlite` の `setAuthorizer` を使うためである。
+
+panoram に観測させたい道具を `PATH` に置く。
+対象は `herdr`、`git`、`ghq`、`mise`、ログイン済みの `gh`、`docker`、`lsof`、`bd` である。
+headsign rows は file から来るので、`PATH` 上の command は要らない。
+session rows は `~/.claude` と `~/.codex` の記録から来る。
+pane と session の結合には、herdr の Claude Code integration と Codex integration が要る。
+
+provider が無いとき、panoram は偽の行を作らない。
+空の table と、失敗を示す `providers` row を返す。
 
 ## 導入
 
 ```sh
-npm install -g panoram
+npm install
+npm link
 panoram --help
 ```
 
-checkout からなら `npm install && npm link` が同じことをする。
-link しなくても `node cli.ts <query>` は動く。
+npm package name は予約済みだが、現時点で tool は publish されていない。
+checkout から導入する。
+link しない場合も、checkout で `node cli.ts <query>` が動く。
 
-この機械のエージェントに skill を渡す:
+この機械のエージェントに skill を渡す。
 
 ```sh
 gh skill install meganemura/panoram panoram --scope user --agent claude-code
@@ -81,22 +123,19 @@ gh skill install meganemura/panoram panoram --scope user --agent codex
 
 ## 次に読むもの
 
-使い方の文書は skill で、エージェントを第一の読み手として書いてある。
-[skills/panoram/SKILL.md](skills/panoram/SKILL.md) が手順で、その references が規則を持つ。
-プロジェクトの AGENTS.md からこの skill を指す。
-
-| 目的 | 読むもの |
-|---|---|
-| クエリを選ぶ。リポジトリで動く前の手順 | [SKILL.md](skills/panoram/SKILL.md) |
-| すべてのクエリと、そのパラメータと列 | [queries.md](skills/panoram/references/queries.md) |
-| JSON の封筒、`providers`、フラグ、`me`、終了コード | [output.md](skills/panoram/references/output.md) |
-| provider が埋める表。自分の文を書くために | [tables.md](skills/panoram/references/tables.md) |
-| 名前付きクエリを SQL ファイル 1 つで足す | [user-queries.md](skills/panoram/references/user-queries.md) |
+| 必要なこと | 読むもの |
+| --- | --- |
+| エージェントが動く前に従う workflow | [skills/panoram/SKILL.md](skills/panoram/SKILL.md) |
+| query name、parameter、report section、column | [queries.md](skills/panoram/references/queries.md) |
+| JSON envelope、`providers`、`section_status`、flag、`me`、exit code | [output.md](skills/panoram/references/output.md) |
+| provider の JSON name と状態源 | [providers.md](skills/panoram/references/providers.md) |
+| ad hoc SQL や user query のための provider table | [tables.md](skills/panoram/references/tables.md) |
+| `~/.config/panoram/queries/` の user query file | [user-queries.md](skills/panoram/references/user-queries.md) |
 
 ## 設計
 
-設計の決定は [docs/](docs/README.md) に ADR として 1 決定 1 ファイルで置き、根拠にした測定を添えてある。
-provider は自分の表を所有する solarsql module 1 つで、結合はすべて report module にある。
+設計の記録は [docs/](docs/README.md) にある。
+fresh database、read-only behavior、provider freshness、selective loading、call log、Docker observation、report model を説明している。
 
 ## ライセンス
 

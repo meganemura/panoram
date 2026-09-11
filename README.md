@@ -2,72 +2,136 @@
 
 [日本語](README.ja.md)
 
-panoram answers questions about one developer's machine: which coding agents run where and what they do, which repositories are dirty, which worktrees have nobody in them, which sessions sit idle, which tool versions a repository activates.
-It is a query layer with no data of its own.
-Each call observes the providers at that moment, joins them in an in-memory SQLite database, and prints rows.
-It is written for a coding agent that reads a skill, and for the human who works beside it.
+panoram gives a coding agent one current view of a developer's machine.
+An agent can already call git, GitHub, process tools, terminal sessions, and worktree tools.
+Each tool shows one slice.
+Before the agent edits, starts a server, opens a pull request, or takes over old work, it needs to know who and what already occupies the machine and the repository.
+
+panoram answers that question.
+It observes existing sources of state, joins their rows in a fresh in-memory SQLite database, prints the result, and exits.
+A provider is one source it observes, such as herdr, git, ghq, mise, gh, Docker, lsof, beads, a session record, or a headsign file.
+panoram reads those sources.
+It does not change them.
 
 ```sh
+panoram here
 panoram in-dir --tsv
 panoram agents-with-sessions
 panoram --help
 ```
 
-## Why panoram
+## A First Use
 
-**It answers questions that cross tools.** herdr knows which pane runs an agent, git knows which checkout is dirty, and gh knows which branch has failing checks; none of them can say "an agent works on a branch whose checks fail". panoram joins their records on one key, the repository root, so `failing-checks-with-agents`, `agents-in-dirty-repos`, `idle-worktrees`, and `sessions-without-pane` are one query each.
+Run this before work starts in a repository:
 
-**It answers for the agent that asks.** The command resolves the caller's own pane from the environment and leaves it out, so `panoram in-dir --tsv` from the repository an agent sits in reads as "who else is here". The skill, not the README, is the documentation an agent reads first.
+```sh
+panoram here
+```
 
-**Every answer is the present, and it says what it could not see.** Each call builds a fresh in-memory database and keeps no cache. The `providers` rows of the envelope carry `ok`, `observed_at`, and the error of every provider the query touched, so empty rows next to `ok` 0 mean "unknown", not "none". Sessions are observed, not searched: live processes only, the last 8 KB of a transcript, never the gigabyte of history.
+`here` is a report about one repository.
+It shows other agents in the repository, the current git state, linked worktrees, the branch pull request, listening ports, local processes, Docker containers and ports, mise tools, open beads issues, and headsign workflow state.
+The agent can then choose a safer next action:
 
-**A question pays only for what it reads.** The tables a statement reads decide which providers run. `dirty` runs git on the repositories that have an agent and nothing else; `review-requests` runs one GitHub search and no `git status`. Ad hoc SQL through `--sql`, and a SQL file of your own under `~/.config/panoram/queries/`, resolve the same way and appear in `--help`.
+- wait when another agent already works in the repository
+- reuse an idle worktree, or avoid a worktree that is already occupied
+- notice dirty files before it edits or reviews
+- avoid a port that already has a local server
+- see a container or Docker-published port tied to the repository
+- see a missing tool for this repository before it runs a check
+- read open issues and workflow state before it continues work
+- see failing pull request checks before it asks to merge
 
-**The shape of every row is a type, and the tables are documented for your own questions.** Each provider is one solarsql module that owns its tables, and the report module holds every join. The build asks SQLite for the type of every column and refuses a query that reaches into another module's tables. The tables and their columns are in [tables.md](skills/panoram/references/tables.md), so a new question is one SQL file, not a change to panoram.
+Queries that list agents exclude the caller by default.
+For an agent inside a pane, `panoram here` and `panoram in-dir` read as "who else is here?"
+That makes the result useful as a gate:
 
-**What it is not.** Not a dashboard: each call prints rows and exits. Not an actions tool: it never writes to a provider, and the tools that own the state keep the verbs. Not a history: past sessions, closed issues, and merged pull requests are other tools' work.
+```sh
+panoram here --expect-empty --strict
+```
+
+For `here`, `--expect-empty` checks the `agents` section.
+`--strict` fails if any provider did not answer.
+
+## Why It Fits Agents
+
+Agents need structured facts more than a screen.
+panoram returns JSON by default, so an agent can read rows, sections, provider status, and the resolved caller identity without parsing terminal text.
+TSV is available when a human wants a compact table.
+
+Agents often need a question that crosses tools.
+git can say a checkout is dirty.
+herdr can say which pane runs an agent.
+gh can say a branch has failing checks.
+panoram joins those facts by repository root, so `agents-in-dirty-repos`, `failing-checks-with-agents`, `idle-worktrees`, and `servers-with-agents` are direct queries.
+
+Agents should pay only for the question they ask.
+A query loads the providers for the tables it reads.
+`tools-in-dir` does not call GitHub.
+`review-requests` does not run `git status`.
+Ad hoc SQL and user query files use the same provider resolution.
+
+Agents need to know when observation is incomplete.
+Every call starts from an empty database, so there is no stale cache.
+The JSON envelope includes `providers`, with `ok`, `observed_at`, `ms`, and `error` for each provider that ran.
+If a provider fails, its tables are empty and its provider row says so.
+Empty rows beside a failed provider mean "unknown", not "none".
+
+Reports add section-level trust data.
+`here` returns `sections`, `section_status`, and report-level `providers`.
+Each `section_status` entry says which direct providers the section reads and whether they answered.
+Read the report-level `providers` too when `--scope agents` or `--scope all` widens the call, because root enumeration can depend on another provider.
+
+Agents also need instructions at the moment they act.
+The agent workflow lives in [skills/panoram/SKILL.md](skills/panoram/SKILL.md).
+The README is the door: it explains what panoram is, why it helps, how to install it, and where to read next.
 
 ## Requirements
 
-Node 24.10 or later, because the build and the ad hoc resolver use `setAuthorizer` of node:sqlite.
-On `PATH`: `herdr`, `git`, `ghq`, `mise`, `gh` (logged in), `lsof`, and `bd` for beads rows.
-Headsign rows need no command on `PATH`.
-The session provider reads the records under `~/.claude` and `~/.codex`; the join between a pane and a session needs herdr's Claude Code and Codex integrations.
-A provider that is missing gives an empty table and a `providers` row that says so.
+panoram requires Node 24.10 or later.
+The build and ad hoc SQL resolver use `setAuthorizer` from `node:sqlite`.
+
+Put the tools you want panoram to observe on `PATH`: `herdr`, `git`, `ghq`, `mise`, `gh` logged in, `docker`, `lsof`, and `bd`.
+Headsign rows come from files and need no command on `PATH`.
+Session rows come from records under `~/.claude` and `~/.codex`.
+Joining a pane to a session needs herdr's Claude Code and Codex integrations.
+
+A missing provider does not make a false row.
+It gives an empty table and a `providers` row that reports the failure.
 
 ## Install
 
 ```sh
-npm install -g panoram
+npm install
+npm link
 panoram --help
 ```
 
-From a checkout, `npm install && npm link` does the same; `node cli.ts <query>` works without the link.
+The npm package name is reserved, but the tool is not published there today.
+Install it from a checkout.
+Without a link, `node cli.ts <query>` works from the checkout.
 
-Give the skill to an agent on this machine:
+Give the skill to agents on this machine:
 
 ```sh
 gh skill install meganemura/panoram panoram --scope user --agent claude-code
 gh skill install meganemura/panoram panoram --scope user --agent codex
 ```
 
-## Read next
+## Read Next
 
-The usage documentation is a skill, written for an agent first: [skills/panoram/SKILL.md](skills/panoram/SKILL.md) is the workflow, and its references hold the rules.
-Point AGENTS.md of a project at it.
-
-| To | Read |
-|---|---|
-| choose a query; the workflow before you act in a repository | [SKILL.md](skills/panoram/SKILL.md) |
-| every query, its parameters, and its columns | [queries.md](skills/panoram/references/queries.md) |
-| the JSON envelope, `providers`, the flags, `me`, the exit codes | [output.md](skills/panoram/references/output.md) |
-| the tables each provider fills, for your own statements | [tables.md](skills/panoram/references/tables.md) |
-| add a named query as one SQL file | [user-queries.md](skills/panoram/references/user-queries.md) |
+| Need | Read |
+| --- | --- |
+| The workflow an agent follows before it acts | [skills/panoram/SKILL.md](skills/panoram/SKILL.md) |
+| Query names, parameters, report sections, and columns | [queries.md](skills/panoram/references/queries.md) |
+| JSON envelopes, `providers`, `section_status`, flags, `me`, and exit codes | [output.md](skills/panoram/references/output.md) |
+| Exact provider JSON names and state sources | [providers.md](skills/panoram/references/providers.md) |
+| Provider tables for ad hoc SQL or user queries | [tables.md](skills/panoram/references/tables.md) |
+| User query files under `~/.config/panoram/queries/` | [user-queries.md](skills/panoram/references/user-queries.md) |
 
 ## Design
 
-The design decisions are in [docs/](docs/README.md), one ADR each, with the measurements they rest on.
-A provider is one solarsql module that owns its tables; the report module holds every join.
+The design records are in [docs/](docs/README.md).
+They explain the fresh database, read-only behavior, provider freshness, selective loading, call log, Docker observation, and report model.
 
 ## License
 

@@ -18,9 +18,14 @@ panoram <query> [--root DIR] [--scope root|agents|all] [--me PANE] [--tsv]
 
 `panoram` is on PATH after `npm link` in the checkout; `node /path/to/panoram/cli.ts` is the same command without the link.
 
-The JSON envelope carries `rows` and `providers`.
+The query JSON envelope carries `rows` and `providers`.
 Read `providers` before you trust `rows`: a provider with `ok` 0 left its tables empty in this call.
+A report such as `here` also carries `section_status`.
+Check the status for the section you will use.
+Its `ok` value only covers the providers whose tables that section reads.
+Read the report-level `providers` too when a widened scope matters.
 The rules of the envelope, the flags, and the exit codes: [references/output.md](references/output.md).
+Exact provider JSON names and their state sources: [references/providers.md](references/providers.md).
 
 ## Workflow
 
