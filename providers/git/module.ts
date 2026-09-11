@@ -38,7 +38,9 @@ export const gitQueries = queries(generated, {
     from git_status where root = :root`,
   // The worktrees of one repository, by its main root.
   worktreesOf: `
-    select path, branch, head from worktrees where repo_root = :root order by path`,
+    select path, branch, head from worktrees
+    where repo_root = coalesce((select repo_root from worktrees where path = :root), :root)
+    order by path`,
 });
 
 export const gitCommands = commands(generated, {

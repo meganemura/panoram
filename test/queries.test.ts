@@ -8,7 +8,7 @@ import { runQuery } from "../core/run.ts";
 import { loaders } from "../panoram.config.ts";
 import { sessionCommands } from "../providers/sessions/module.ts";
 import type { SessionsId } from "../providers/sessions/solarsql.generated.ts";
-import { fakeExec, fixtureRepo, paneIds, paths, sessionIds } from "./fixture.ts";
+import { fakeExec, fixtureAgentsWithLinkedWorktree, fixtureRepo, paneIds, paths, sessionIds } from "./fixture.ts";
 
 const sessionFixtureLoader: Loader = {
   name: "sessions",
@@ -231,6 +231,10 @@ test("repository catalog queries preserve their ordered rows", async () => {
     { root: paths.gamma, branch: "gamma", dirty_count: 1, untracked_count: 0 },
   ]);
   assert.deepEqual((await query("worktrees", "agents", { root: paths.alpha })).rows, [
+    { path: paths.alpha, branch: "main", head: "abc" },
+    { path: paths.alphaWorktree, branch: "feature", head: "def" },
+  ]);
+  assert.deepEqual((await query("worktrees", "agents", { root: paths.alphaWorktree }, fakeExec({ agents: fixtureAgentsWithLinkedWorktree() }))).rows, [
     { path: paths.alpha, branch: "main", head: "abc" },
     { path: paths.alphaWorktree, branch: "feature", head: "def" },
   ]);

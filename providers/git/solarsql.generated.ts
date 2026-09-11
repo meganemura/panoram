@@ -25,8 +25,8 @@ export type Generated = {
     params: { root: GitStatusId };
     row: { root: GitStatusId; branch: string | null; upstream: string | null; ahead: number; behind: number; dirty_count: number; untracked_count: number };
   };
-  "\n    select path, branch, head from worktrees where repo_root = :root order by path": {
-    params: { root: string };
+  "\n    select path, branch, head from worktrees\n    where repo_root = coalesce((select repo_root from worktrees where path = :root), :root)\n    order by path": {
+    params: { root: WorktreesId };
     row: { path: WorktreesId; branch: string | null; head: string | null };
   };
 };
@@ -36,5 +36,5 @@ export const generated: Meta<Generated> = {
   "insert or ignore into git_status (root, branch, upstream, ahead, behind, dirty_count, untracked_count, observed_at)\n       select value ->> 'root', value ->> 'branch', value ->> 'upstream', value ->> 'ahead', value ->> 'behind',\n              value ->> 'dirty_count', value ->> 'untracked_count', value ->> 'observed_at' from json_each(:rows)": { params: ["rows"], encode: ["rows"], json: [], reads: [] },
   "\n    select root, branch, dirty_count, untracked_count\n    from git_status where dirty_count > 0 order by dirty_count desc, root": { params: [], encode: [], json: [], reads: ["git_status"] },
   "\n    select root, branch, upstream, ahead, behind, dirty_count, untracked_count\n    from git_status where root = :root": { params: ["root"], encode: [], json: [], reads: ["git_status"] },
-  "\n    select path, branch, head from worktrees where repo_root = :root order by path": { params: ["root"], encode: [], json: [], reads: ["worktrees"] },
+  "\n    select path, branch, head from worktrees\n    where repo_root = coalesce((select repo_root from worktrees where path = :root), :root)\n    order by path": { params: ["root"], encode: [], json: [], reads: ["worktrees"] },
 };
