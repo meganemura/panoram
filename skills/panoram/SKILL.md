@@ -7,7 +7,7 @@ description: Use when an agent wants to know the state of the developer's machin
 # panoram
 
 panoram answers questions about one developer's machine.
-Each call observes the providers (herdr, git, ghq, mise, gh, ps, lsof, beads, headsign state files, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
+Each call observes the providers (herdr, git, ghq, mise, gh, Docker, ps, lsof, beads, headsign state files, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
 Nothing is cached, and panoram never writes to a provider.
 
 Call it from anywhere:
@@ -24,7 +24,7 @@ The rules of the envelope, the flags, and the exit codes: [references/output.md]
 
 ## Workflow
 
-1. **Before you start work in a repository**: `here` (one call: who else is here with `in-dir`, the checkout with `git-status` and `worktrees`, its pull request with `branch-pull-requests`, ports with `ports-in-dir`, processes with `processes-in-dir`, tools with `tools-in-dir`, issues, and the workflow). The rows exclude your own pane. As a gate: `panoram here --expect-empty --strict` exits 0 only when nobody else is here and every provider answered.
+1. **Before you start work in a repository**: `here` (one call: who else is here with `in-dir`, the checkout with `git-status` and `worktrees`, its pull request with `branch-pull-requests`, ports with `ports-in-dir`, processes with `processes-in-dir`, Docker containers with `containers-in-dir` and `container-ports-in-dir`, tools with `tools-in-dir`, issues, and the workflow). The rows exclude your own pane. As a gate: `panoram here --expect-empty --strict` exits 0 only when nobody else is here and every provider answered.
 2. **When the user asks what is going on**: `agents-with-sessions` (names, idle time), `working`, `idle-sessions`, `workspaces`.
 3. **When you look for a place to work**: `idle-worktrees` (a worktree with nobody in it), `dirty-unattended` (changes nobody is tending).
 4. **When a tool is missing or the wrong version**: `tools-in-dir`, `missing-tools-with-agents`, `tool-versions-split`.
@@ -61,6 +61,9 @@ The table lists the queries the workflow names. Every query, with its parameters
 | `processes-in-dir` | `--root` | Processes whose working directory is inside one repository. |
 | `ports-in-dir` | `--root` | Listening ports of processes inside one repository. |
 | `servers-with-agents` | | Listening processes in repositories where an agent works. |
+| `containers` | | Every Docker container, with image, state, health, and Compose identity. |
+| `containers-in-dir` | `--root` | Docker containers associated with one repository. |
+| `container-ports-in-dir` | `--root` | Docker container ports associated with one repository. |
 | `skills-in-dir` | `--root` | The skills an agent can use in one repository. |
 | `duplicate-skill-names` | | Skill names that come from more than one source. |
 | `issues` | `--root` | Open beads issues of one repository. |

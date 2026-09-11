@@ -9,6 +9,7 @@ import { repoQueries } from "./providers/repos/public.ts";
 import { reportQueries } from "./providers/report/public.ts";
 import { sessionQueries } from "./providers/sessions/public.ts";
 import { githubQueries } from "./providers/github/public.ts";
+import { dockerQueries } from "./providers/docker/public.ts";
 import { processQueries } from "./providers/processes/public.ts";
 import { skillsQueries } from "./providers/skills/public.ts";
 import { beadsQueries } from "./providers/beads/public.ts";
@@ -36,6 +37,9 @@ export const catalog: Readonly<Record<string, Named>> = {
   "pull-requests": { query: githubQueries.open, description: "Open pull requests of one repository.", params: ["root"] },
   "branch-pull-requests": { query: reportQueries.branchPullRequests, description: "Open pull requests for the branch one repository is on, with checks.", params: ["root"] },
   "review-requests": { query: githubQueries.reviewRequests, description: "Open pull requests that request the user's review.", params: [] },
+  "containers": { query: dockerQueries.all, description: "Every Docker container, with image, state, health, and Compose identity.", params: [] },
+  "containers-in-dir": { query: dockerQueries.inDir, description: "Docker containers associated with one repository.", params: ["root"] },
+  "container-ports-in-dir": { query: dockerQueries.portsInDir, description: "Docker container ports associated with one repository.", params: ["root"] },
   "processes-in-dir": { query: processQueries.inDir, description: "Processes whose working directory is inside one repository.", params: ["root"] },
   "listening-ports": { query: processQueries.listening, description: "Every listening TCP port of the user, with the repository its process sits in.", params: [] },
   "skills": { query: skillsQueries.all, description: "Every skill Claude Code and Codex can load, with its source.", params: [] },
@@ -73,7 +77,7 @@ export const catalog: Readonly<Record<string, Named>> = {
 
 export const reports = {
   here: {
-    description: "Everything about the repository you sit in: who else is here, the checkout, its pull request, ports, tools, issues, the workflow.",
+    description: "Everything about the repository you sit in: who else is here, the checkout, its pull request, ports, containers, tools, issues, the workflow.",
     sections: [
       ["agents", "in-dir"],
       ["git", "git-status"],
@@ -81,6 +85,8 @@ export const reports = {
       ["pull_requests", "branch-pull-requests"],
       ["ports", "ports-in-dir"],
       ["processes", "processes-in-dir"],
+      ["containers", "containers-in-dir"],
+      ["container_ports", "container-ports-in-dir"],
       ["tools", "tools-in-dir"],
       ["issues", "issues"],
       ["workflow", "workflow"],

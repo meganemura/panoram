@@ -73,6 +73,31 @@ It contains user processes whose cwd is inside a root in scope. `executable` is 
 `listeners`: `id` (key, `pid:address:port`), `pid`, `address`, `port`, `cwd?`, `root?`, `command?`.
 It contains every listening TCP socket of the user. A process can have rows for both IPv4 and IPv6 or for several ports. `root` is set when its cwd is inside a root in scope.
 
+## `containers`, `container_roots`, and `container_ports` (docker)
+
+`containers`: `id` (key), `name`, `image`, `state`, `health?`,
+`created_at`, `started_at?`, `finished_at?`, `exit_code`, `oom_killed`,
+`restart_count`, `compose_project?`, `compose_service?`.
+It contains every container in the active Docker CLI context, including stopped
+containers.
+Timestamps are milliseconds since the epoch.
+Docker zero timestamps become null.
+`image` is Docker `Config.Image`, and `state` is Docker `State.Status`.
+`health` is Docker `State.Health.Status` when Docker reports it.
+`compose_project` and `compose_service` come from the canonical Compose labels.
+
+`container_roots`: `container_id`, `root`, with the pair as the key.
+It associates a container with repository roots found from bind mounts and the
+optional Compose working-directory label.
+A container that does not map to a repository remains in `containers` and has
+no `container_roots` row.
+
+`container_ports`: `id` (key), `container_id`, `container_port`, `protocol`,
+`host_ip?`, `host_port?`.
+It contains one row for each exposed container port and host binding.
+An exposed port with no host binding has null host fields.
+Multiple host bindings become multiple rows.
+
 ## `skills` and `plugins` (skills)
 
 `skills`: `path` (key), `source`, `agent`, `name`, `description?`, `root?`, `plugin?`.

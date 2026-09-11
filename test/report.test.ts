@@ -53,7 +53,7 @@ function options(root: string = paths.alpha) {
 test("here runs its ordered sections after one union of providers", async () => {
   const result = await runReport(hereSections, options());
 
-  assert.deepEqual(Object.keys(result.sections), ["agents", "git", "worktrees", "pull_requests", "ports", "processes", "tools", "issues", "workflow"]);
+  assert.deepEqual(Object.keys(result.sections), ["agents", "git", "worktrees", "pull_requests", "ports", "processes", "containers", "container_ports", "tools", "issues", "workflow"]);
   assert.deepEqual(result.sections.agents, [
     { pane_id: paneIds.alphaWorking, name: "Alpha working", agent: "claude", agent_status: "working", cwd: paths.alpha, title: "alpha working" },
     { pane_id: paneIds.alphaIdle, name: null, agent: "claude", agent_status: "idle", cwd: paths.alphaSubdirectory, title: "alpha idle" },
@@ -70,13 +70,28 @@ test("here runs its ordered sections after one union of providers", async () => 
   ]);
   assert.deepEqual(result.sections.ports, []);
   assert.deepEqual(result.sections.processes, []);
+  assert.deepEqual(result.sections.containers, []);
+  assert.deepEqual(result.sections.container_ports, []);
   assert.deepEqual(result.sections.tools, [
     { tool: "node", version: "24.10.0", source: "/home/u/.config/mise/config.toml", installed: 1 },
     { tool: "ruby", version: "4.0.6", source: "/home/u/src/github.com/o/mise.toml", installed: 0 },
   ]);
   assert.deepEqual(result.sections.issues, []);
   assert.deepEqual(result.sections.workflow, []);
-  assert.deepEqual(result.providers.map((provider) => provider.name), ["beads", "git", "github", "headsign", "herdr", "mise", "processes", "repos"]);
+  assert.deepEqual(Object.fromEntries(Object.entries(result.sectionStatus)), {
+    agents: { providers: ["herdr"], ok: 1, errors: [] },
+    git: { providers: ["git"], ok: 1, errors: [] },
+    worktrees: { providers: ["git"], ok: 1, errors: [] },
+    pull_requests: { providers: ["github", "git"], ok: 1, errors: [] },
+    ports: { providers: ["processes"], ok: 1, errors: [] },
+    processes: { providers: ["processes"], ok: 1, errors: [] },
+    containers: { providers: ["docker"], ok: 1, errors: [] },
+    container_ports: { providers: ["docker"], ok: 1, errors: [] },
+    tools: { providers: ["mise"], ok: 1, errors: [] },
+    issues: { providers: ["beads"], ok: 1, errors: [] },
+    workflow: { providers: ["headsign"], ok: 1, errors: [] },
+  });
+  assert.deepEqual(result.providers.map((provider) => provider.name), ["beads", "docker", "git", "github", "headsign", "herdr", "mise", "processes", "repos"]);
   assert.equal(new Set(result.providers.map((provider) => provider.name)).size, result.providers.length);
   assert.equal(result.me, paneIds.betaWorking);
   assert.deepEqual(result.params, { root: paths.alpha, me: paneIds.betaWorking });

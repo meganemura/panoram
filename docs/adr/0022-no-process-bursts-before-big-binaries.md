@@ -19,7 +19,7 @@ gh and ghq are adhoc linker-signed, node uses the hardened runtime, and XProtect
 ## Decision
 
 The core reads Git roots and origin URLs from Git discovery files in-process.
-The loader configuration starts ghq, gh, mise, and bd before loaders that start many git or lsof processes.
+The loader configuration starts ghq, gh, mise, bd, and docker before loaders that start many git or lsof processes.
 
 ## Consequences
 

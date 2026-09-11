@@ -6,7 +6,7 @@ Status: accepted
 
 ## Context
 
-panoram has 45 named queries.
+panoram has 54 named queries.
 The order of use is the order that helps a caller choose one.
 panoram has no data of its own, and this log is the one exception.
 

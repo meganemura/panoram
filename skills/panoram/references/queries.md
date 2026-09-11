@@ -8,8 +8,9 @@ Columns marked `?` can be null.
 
 `here` runs these ordered sections for one `root`: `agents` (`in-dir`), `git`
 (`git-status`), `worktrees`, `pull_requests` (`branch-pull-requests`), `ports`
-(`ports-in-dir`), `processes` (`processes-in-dir`), `tools` (`tools-in-dir`),
-`issues`, and `workflow`.
+(`ports-in-dir`), `processes` (`processes-in-dir`), `containers`
+(`containers-in-dir`), `container_ports` (`container-ports-in-dir`), `tools`
+(`tools-in-dir`), `issues`, and `workflow`.
 
 ## Agents (herdr)
 
@@ -104,6 +105,24 @@ A session without a pane appears in `sessions-without-pane`.
 | `long-running-without-agents` | | `root`, `pid`, `executable`, `elapsed_s`, `rss_kb` |
 
 `elapsed_s` is process age in seconds. `rss_kb` is resident memory in KiB. `cpu` is the current CPU percentage from ps. A listener can have null location fields when lsof cannot examine its cwd or it is outside the roots in scope. `agents` excludes `me`.
+
+## Docker
+
+| Query | Parameters | Columns |
+| --- | --- | --- |
+| `containers` | | `id`, `name`, `image`, `state`, `health?`, `created_at`, `started_at?`, `finished_at?`, `exit_code`, `oom_killed`, `restart_count`, `compose_project?`, `compose_service?` |
+| `containers-in-dir` | `root` | the same columns, for containers associated with one repository |
+| `container-ports-in-dir` | `root` | `name`, `state`, `container_id`, `container_port`, `protocol`, `host_ip?`, `host_port?` |
+
+`containers` includes stopped containers.
+It orders running containers first, then by name.
+`containers-in-dir` uses roots found from bind mounts and the optional Compose
+working-directory label.
+`container-ports-in-dir` includes the container state.
+It includes exposed ports with no host binding after published ports.
+Multiple host bindings become multiple rows.
+Docker daemon and socket errors are provider failures, so empty rows beside a
+failed Docker provider mean unknown.
 
 ## Skills and plugins (Claude Code, Codex)
 

@@ -40,6 +40,34 @@ CREATE TABLE codex_sessions (
     tokens_used integer not null default 0,
     archived integer not null default 0
   ) strict;
+CREATE TABLE container_ports (
+    id text primary key not null,
+    container_id text not null references containers(id),
+    container_port integer not null,
+    protocol text not null,
+    host_ip text,
+    host_port integer
+  ) strict;
+CREATE TABLE container_roots (
+    container_id text not null references containers(id),
+    root text not null,
+    primary key (container_id, root)
+  ) strict;
+CREATE TABLE containers (
+    id text primary key not null,
+    name text not null,
+    image text not null,
+    state text not null,
+    health text,
+    created_at integer not null,
+    started_at integer,
+    finished_at integer,
+    exit_code integer not null,
+    oom_killed integer not null default 0,
+    restart_count integer not null default 0,
+    compose_project text,
+    compose_service text
+  ) strict;
 CREATE TABLE git_status (
     root text primary key not null,
     branch text,
