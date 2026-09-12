@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { catalog } from "../catalog.ts";
 import type { Exec, Loader, Scope } from "../core/loader.ts";
 import { runQuery } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { sessionCommands } from "../providers/sessions/module.ts";
 import type { SessionsId } from "../providers/sessions/solarsql.generated.ts";
 import { fakeExec, fixtureAgentsWithLinkedWorktree, fixtureRepo, paneIds, paths, sessionIds } from "./fixture.ts";

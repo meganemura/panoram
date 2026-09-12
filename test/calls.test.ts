@@ -10,7 +10,7 @@ import * as gs from "@hegeldev/hegel/generators";
 import { callCounts, callsPath, recordCall } from "../core/calls.ts";
 
 function withStateHome(run: (env: Record<string, string>) => void): void {
-  const stateHome = mkdtempSync(join(tmpdir(), "panoram-calls-"));
+  const stateHome = mkdtempSync(join(tmpdir(), "spacequery-calls-"));
   try {
     run({ XDG_STATE_HOME: stateHome });
   } finally {
@@ -27,7 +27,7 @@ test("call counts retain each recorded name", () => withStateHome((env) => {
 
 test("call counts skip a malformed line", () => withStateHome((env) => {
   const path = callsPath(env);
-  mkdirSync(join(env.XDG_STATE_HOME!, "panoram"), { recursive: true });
+  mkdirSync(join(env.XDG_STATE_HOME!, "spacequery"), { recursive: true });
   writeFileSync(path, "not json\n{\"name\":\"dirty\"}\n");
   assert.deepEqual(callCounts(env), new Map([["dirty", 1]]));
 }));

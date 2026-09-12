@@ -6,9 +6,9 @@ Status: accepted
 
 ## Context
 
-panoram has no data of its own; the providers own the state.
+spacequery has no data of its own; the providers own the state.
 A stored copy would need a freshness policy and an invalidation path for every provider.
-No provider tells panoram when its state changed, so a copy has no moment at which to refresh.
+No provider tells spacequery when its state changed, so a copy has no moment at which to refresh.
 
 ## Decision
 

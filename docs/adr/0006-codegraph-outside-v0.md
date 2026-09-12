@@ -14,7 +14,7 @@ A provider that copied every index into the in-memory database would read every 
 ## Decision
 
 CodeGraph is not a provider.
-The owner confirmed on 2026-09-10 that the question a CodeGraph provider would answer, whether an index is current, is not one panoram needs.
+The owner confirmed on 2026-09-10 that the question a CodeGraph provider would answer, whether an index is current, is not one spacequery needs.
 
 ## Consequences
 

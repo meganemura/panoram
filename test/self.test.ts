@@ -1,4 +1,4 @@
-// These tests prove how panoram finds and excludes the caller's agent row.
+// These tests prove how spacequery finds and excludes the caller's agent row.
 // They do not validate the external environment that supplies these identifiers.
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -7,7 +7,7 @@ import * as gs from "@hegeldev/hegel/generators";
 import { catalog } from "../catalog.ts";
 import type { Exec } from "../core/loader.ts";
 import { runQuery } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { drawSnapshotAgents, fixtureRepo, generatedAgentCwds, generatedSnapshot, fakeExec, fixtureAgents, paneIds, repoForRoots, sessionIds } from "./fixture.ts";
 

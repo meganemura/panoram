@@ -14,9 +14,9 @@ import { loadUserQueries } from "../core/user-queries.ts";
 const execFileAsync = promisify(execFile);
 
 async function withQueries<R>(files: Readonly<Record<string, string>>, run: (configHome: string, directory: string) => Promise<R> | R): Promise<R> {
-  const scratch = mkdtempSync(join(tmpdir(), "panoram-user-queries-"));
+  const scratch = mkdtempSync(join(tmpdir(), "spacequery-user-queries-"));
   const configHome = join(scratch, "config");
-  const directory = join(configHome, "panoram", "queries");
+  const directory = join(configHome, "spacequery", "queries");
   mkdirSync(directory, { recursive: true });
   for (const [name, sql] of Object.entries(files)) writeFileSync(join(directory, name), sql);
   try {
@@ -93,9 +93,9 @@ test("the CLI binds a user query flag as text", async () => {
 });
 
 test("a user query lists every parameter token once", () => {
-  const scratch = mkdtempSync(join(tmpdir(), "panoram-user-query-parameters-"));
+  const scratch = mkdtempSync(join(tmpdir(), "spacequery-user-query-parameters-"));
   const configHome = join(scratch, "config");
-  const directory = join(configHome, "panoram", "queries");
+  const directory = join(configHome, "spacequery", "queries");
   mkdirSync(directory, { recursive: true });
   try {
     hegel.test((tc) => {

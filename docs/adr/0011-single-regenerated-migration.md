@@ -13,8 +13,8 @@ Migration history gives no runtime value for that database.
 
 The schema uses one regenerated migration.
 For a schema change, delete `migrations/`.
-Run `npx solarsql build panoram.config.ts`.
-Run `npx solarsql migration initial panoram.config.ts`.
+Run `npx solarsql build spacequery.config.ts`.
+Run `npx solarsql migration initial spacequery.config.ts`.
 Commit the regenerated files.
 
 ## Consequences

@@ -6,7 +6,7 @@ import { catalog, reports } from "../catalog.ts";
 import type { Exec } from "../core/loader.ts";
 import { providerQueries } from "../core/providers/public.ts";
 import { runReport } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { fakeExec, fixtureRepo, paneIds, paths } from "./fixture.ts";
 
 const hereSections = reports.here.sections.map(([section, query]) => [section, catalog[query]!.query] as const);

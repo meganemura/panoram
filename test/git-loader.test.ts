@@ -6,7 +6,7 @@ import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import type { Exec, Loader } from "../core/loader.ts";
 import { runSql } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { gitLoader } from "../providers/git/loader.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";

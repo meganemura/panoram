@@ -22,4 +22,4 @@ The listener call ands its selectors with `-a`; without it lsof ors the user fil
 
 The provider costs 0.5 to 1 s.
 A process in a repository without an agent is absent under the default scope and appears with `--scope all`.
-The pane shell and panoram appear as processes of the root when observable, which describes the machine correctly.
+The pane shell and spacequery appear as processes of the root when observable, which describes the machine correctly.

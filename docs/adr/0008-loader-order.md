@@ -19,7 +19,7 @@ The cause was not identified.
 ## Decision
 
 A loader runs after the loaders its `after` names.
-Independent loaders keep the order of the module list in `panoram.config.ts`.
+Independent loaders keep the order of the module list in `spacequery.config.ts`.
 The configuration puts loaders that start ghq, gh, mise, bd, and docker before loaders that start many git or lsof processes.
 On 2026-09-11, 18 concurrent file-opening processes delayed the next large non-Apple binary by about two seconds.
 

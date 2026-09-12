@@ -6,8 +6,8 @@ Status: accepted
 
 ## Context
 
-panoram is a command, not a library.
-Node 24 runs TypeScript by type stripping, and every file of panoram is written for it: `.ts` imports, no enums, no decorators.
+spacequery is a command, not a library.
+Node 24 runs TypeScript by type stripping, and every file of spacequery is written for it: `.ts` imports, no enums, no decorators.
 The usage documentation is the skill (ADR 0015), and an agent needs it on the machine, not only in the repository.
 `gh skill install` reads `skills/*/SKILL.md` from a repository or a local directory and copies it into the agent's skill directory.
 
@@ -21,6 +21,6 @@ The skill is installed with `gh skill install` from the repository or from the c
 
 ## Consequences
 
-`npm install -g panoram` gives the command and the skill files under `node_modules/panoram/skills/`; an agent still needs `gh skill install` for the skill to be in its own directory.
+`npm install -g spacequery` gives the command and the skill files under `node_modules/spacequery/skills/`; an agent still needs `gh skill install` for the skill to be in its own directory.
 A user on Node 22 cannot run the package, and the engines field says so.
 The test directory is not in the package.

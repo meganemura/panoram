@@ -13,16 +13,16 @@ inside Docker Desktop or Colima.
 They can also miss which container owns a published port.
 
 Docker already ships a CLI that exposes the active context.
-Using the CLI avoids a Docker SDK dependency and keeps panoram aligned with the
+Using the CLI avoids a Docker SDK dependency and keeps spacequery aligned with the
 context the developer selected.
 
 ## Decision
 
-panoram observes Docker with at most two CLI calls per provider load.
+spacequery observes Docker with at most two CLI calls per provider load.
 It first runs `docker container ls --all --quiet --no-trunc`.
 If that returns no container IDs, the provider succeeds with empty Docker
 tables and does not run inspect.
-If it returns IDs, panoram runs one `docker container inspect` for all IDs.
+If it returns IDs, spacequery runs one `docker container inspect` for all IDs.
 
 The provider stores container rows, repository-root associations, and normalized
 port rows.
@@ -30,7 +30,7 @@ Bind mounts give candidate host paths from `Mounts[].Source` when
 `Mounts[].Type` is `bind`.
 The Compose label `com.docker.compose.project.working_dir` is also a candidate
 host path when it exists.
-That label is an observed Compose implementation detail, so panoram treats it
+That label is an observed Compose implementation detail, so spacequery treats it
 as a hint.
 Each candidate passes through the shared repository root resolver.
 

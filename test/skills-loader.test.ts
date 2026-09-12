@@ -14,7 +14,7 @@ import { repoLoader } from "../providers/repos/loader.ts";
 import { readFrontmatter, skillsLoader, splitPluginId } from "../providers/skills/loader.ts";
 import { repoForRoots } from "./fixture.ts";
 
-const home = mkdtempSync(join(tmpdir(), "panoram-skills-"));
+const home = mkdtempSync(join(tmpdir(), "spacequery-skills-"));
 const root = join(home, "src", "github.com", "example", "project");
 
 function skill(directory: string, name: string, description: string | null = `Description for ${name}`): void {

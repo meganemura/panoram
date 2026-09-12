@@ -2,7 +2,7 @@
 
 Date: 2026-09-10
 
-Status: accepted
+Status: superseded by [0030](0030-rename-to-spacequery.md)
 
 ## Context
 

@@ -12,7 +12,7 @@ The solarsql 0.1.0 generated file carried parameters, encodings, and JSON column
 A `reads` declaration on each named query would be a second list to keep in step with the SQL, and ad hoc SQL would have none.
 A `setAuthorizer` probe at prepare time, on the empty migrated database, reports every table a statement reads in microseconds.
 v0 started with the probe for both paths.
-solarsql 0.2.0, at panoram's request, emits `reads` for every statement: the declared tables it reads, sorted, without duplicates.
+solarsql 0.2.0, at spacequery's request, emits `reads` for every statement: the declared tables it reads, sorted, without duplicates.
 
 ## Decision
 

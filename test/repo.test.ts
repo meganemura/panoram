@@ -9,7 +9,7 @@ import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import { fsRepo, originFromConfig, repositoryIdentity } from "../core/repo.ts";
 
-const home = mkdtempSync(join(tmpdir(), "panoram-repo-"));
+const home = mkdtempSync(join(tmpdir(), "spacequery-repo-"));
 const main = join(home, "main");
 const linked = join(home, "linked");
 const outside = join(home, "outside");

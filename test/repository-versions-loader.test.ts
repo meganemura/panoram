@@ -9,11 +9,11 @@ import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import { catalog, reports } from "../catalog.ts";
 import { runQuery, runReport } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { packageJsonRows, packageLockRows, scanRepositoryVersions } from "../providers/repository-versions/loader.ts";
 
 async function withRoot(run: (root: string) => Promise<void>): Promise<void> {
-  const root = await mkdtemp(join(tmpdir(), "panoram-repository-versions-"));
+  const root = await mkdtemp(join(tmpdir(), "spacequery-repository-versions-"));
   try { await run(root); } finally { await rm(root, { recursive: true, force: true }); }
 }
 

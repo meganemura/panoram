@@ -1,23 +1,23 @@
-# ⛰️ panoram
+# 🪐 spacequery
 
 [日本語](README.ja.md)
 
-panoram gives a coding agent one current view of a developer's machine.
+spacequery gives a coding agent one current view of a developer's machine.
 An agent can already call git, GitHub, process tools, terminal sessions, and worktree tools.
 Each tool shows one slice.
 Before the agent edits, starts a server, opens a pull request, or takes over old work, it needs to know who and what already occupies the machine and the repository.
 
-panoram answers that question.
+spacequery answers that question.
 It observes existing sources of state, joins their rows in a fresh in-memory SQLite database, prints the result, and exits.
 A provider is one source it observes, such as herdr, git, ghq, mise, Homebrew, gh, Docker, lsof, beads, a session record, or a headsign file.
-panoram reads those sources.
+spacequery reads those sources.
 It does not change them.
 
 ```sh
-panoram here
-panoram in-dir --tsv
-panoram agents-with-sessions
-panoram --help
+spacequery here
+spacequery in-dir --tsv
+spacequery agents-with-sessions
+spacequery --help
 ```
 
 ## A First Use
@@ -25,7 +25,7 @@ panoram --help
 Run this before work starts in a repository:
 
 ```sh
-panoram here
+spacequery here
 ```
 
 `here` is a report about one repository.
@@ -42,11 +42,11 @@ The agent can then choose a safer next action:
 - see failing pull request checks before it asks to merge
 
 Queries that list agents exclude the caller by default.
-For an agent inside a pane, `panoram here` and `panoram in-dir` read as "who else is here?"
+For an agent inside a pane, `spacequery here` and `spacequery in-dir` read as "who else is here?"
 That makes the result useful as a gate:
 
 ```sh
-panoram here --expect-empty --strict
+spacequery here --expect-empty --strict
 ```
 
 For `here`, `--expect-empty` checks the `agents` section.
@@ -55,14 +55,14 @@ For `here`, `--expect-empty` checks the `agents` section.
 ## Why It Fits Agents
 
 Agents need structured facts more than a screen.
-panoram returns JSON by default, so an agent can read rows, sections, provider status, and the resolved caller identity without parsing terminal text.
+spacequery returns JSON by default, so an agent can read rows, sections, provider status, and the resolved caller identity without parsing terminal text.
 TSV is available when a human wants a compact table.
 
 Agents often need a question that crosses tools.
 git can say a checkout is dirty.
 herdr can say which pane runs an agent.
 gh can say a branch has failing checks.
-panoram joins those facts by repository root, so `agents-in-dirty-repos`, `failing-checks-with-agents`, `idle-worktrees`, and `servers-with-agents` are direct queries.
+spacequery joins those facts by repository root, so `agents-in-dirty-repos`, `failing-checks-with-agents`, `idle-worktrees`, and `servers-with-agents` are direct queries.
 
 Agents should pay only for the question they ask.
 A query loads the providers for the tables it reads.
@@ -82,15 +82,15 @@ Each `section_status` entry says which direct providers the section reads and wh
 Read the report-level `providers` too when `--scope agents` or `--scope all` widens the call, because root enumeration can depend on another provider.
 
 Agents also need instructions at the moment they act.
-The agent workflow lives in [skills/panoram/SKILL.md](skills/panoram/SKILL.md).
-The README is the door: it explains what panoram is, why it helps, how to install it, and where to read next.
+The agent workflow lives in [skills/spacequery/SKILL.md](skills/spacequery/SKILL.md).
+The README is the door: it explains what spacequery is, why it helps, how to install it, and where to read next.
 
 ## Requirements
 
-panoram requires Node 24.10 or later.
+spacequery requires Node 24.10 or later.
 The build and ad hoc SQL resolver use `setAuthorizer` from `node:sqlite`.
 
-Put the tools you want panoram to observe on `PATH`: `herdr`, `git`, `ghq`, `mise`, `brew`, `gh` logged in, `docker`, `lsof`, and `bd`.
+Put the tools you want spacequery to observe on `PATH`: `herdr`, `git`, `ghq`, `mise`, `brew`, `gh` logged in, `docker`, `lsof`, and `bd`.
 Headsign rows come from files and need no command on `PATH`.
 Session rows come from records under `~/.claude` and `~/.codex`.
 Joining a pane to a session needs herdr's Claude Code and Codex integrations.
@@ -110,7 +110,7 @@ The report includes source coverage and unresolved evidence from the same snapsh
 ```sh
 npm install
 npm link
-panoram --help
+spacequery --help
 ```
 
 The npm package name is reserved, but the tool is not published there today.
@@ -120,20 +120,20 @@ Without a link, `node cli.ts <query>` works from the checkout.
 Give the skill to agents on this machine:
 
 ```sh
-gh skill install meganemura/panoram panoram --scope user --agent claude-code
-gh skill install meganemura/panoram panoram --scope user --agent codex
+gh skill install meganemura/spacequery spacequery --scope user --agent claude-code
+gh skill install meganemura/spacequery spacequery --scope user --agent codex
 ```
 
 ## Read Next
 
 | Need | Read |
 | --- | --- |
-| The workflow an agent follows before it acts | [skills/panoram/SKILL.md](skills/panoram/SKILL.md) |
-| Query names, parameters, report sections, and columns | [queries.md](skills/panoram/references/queries.md) |
-| JSON envelopes, `providers`, `section_status`, flags, `me`, and exit codes | [output.md](skills/panoram/references/output.md) |
-| Exact provider JSON names and state sources | [providers.md](skills/panoram/references/providers.md) |
-| Provider tables for ad hoc SQL or user queries | [tables.md](skills/panoram/references/tables.md) |
-| User query files under `~/.config/panoram/queries/` | [user-queries.md](skills/panoram/references/user-queries.md) |
+| The workflow an agent follows before it acts | [skills/spacequery/SKILL.md](skills/spacequery/SKILL.md) |
+| Query names, parameters, report sections, and columns | [queries.md](skills/spacequery/references/queries.md) |
+| JSON envelopes, `providers`, `section_status`, flags, `me`, and exit codes | [output.md](skills/spacequery/references/output.md) |
+| Exact provider JSON names and state sources | [providers.md](skills/spacequery/references/providers.md) |
+| Provider tables for ad hoc SQL or user queries | [tables.md](skills/spacequery/references/tables.md) |
+| User query files under `~/.config/spacequery/queries/` | [user-queries.md](skills/spacequery/references/user-queries.md) |
 
 ## Design
 

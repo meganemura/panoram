@@ -79,7 +79,7 @@ A session without a pane appears in `sessions-without-pane`.
 | `tool-versions-split` | | `tool`, `versions`, `version_list?` |
 
 `source` is the path of the mise file that requested the version; a file above the repository counts.
-`active` in `tools` is relative to the directory panoram ran from.
+`active` in `tools` is relative to the directory spacequery ran from.
 
 ## Installed software (mise, Homebrew)
 

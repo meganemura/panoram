@@ -6,14 +6,14 @@ Status: accepted
 
 ## Context
 
-panoram has 54 named queries.
+spacequery has 54 named queries.
 The order of use is the order that helps a caller choose one.
-panoram has no data of its own, and this log is the one exception.
+spacequery has no data of its own, and this log is the one exception.
 
 ## Decision
 
-panoram appends one JSON line for each completed query to `$XDG_STATE_HOME/panoram/calls.jsonl`.
-It uses `~/.local/state/panoram/calls.jsonl` when `XDG_STATE_HOME` is unset.
+spacequery appends one JSON line for each completed query to `$XDG_STATE_HOME/spacequery/calls.jsonl`.
+It uses `~/.local/state/spacequery/calls.jsonl` when `XDG_STATE_HOME` is unset.
 Each line holds a query name and a millisecond timestamp.
 It holds no parameters, roots, or result rows.
 `--help` sorts built-in queries and user queries by descending call count.

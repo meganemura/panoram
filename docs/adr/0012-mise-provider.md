@@ -6,7 +6,7 @@ Status: accepted
 
 ## Context
 
-panoram needs to show installed tool versions and the versions a repository requests.
+spacequery needs to show installed tool versions and the versions a repository requests.
 mise resolves those requests relative to a directory.
 A configuration file can sit above a repository root.
 Its path explains why that root selects a version.

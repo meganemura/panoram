@@ -29,7 +29,7 @@ function today(): string {
 }
 
 async function fixtureHome(): Promise<string> {
-  const home = await mkdtemp(join(tmpdir(), "panoram-sessions-"));
+  const home = await mkdtemp(join(tmpdir(), "spacequery-sessions-"));
   const transcript = join(home, ".claude", "projects", "-work-claude", `${claudeId}.jsonl`);
   const rollout = join(home, ".codex", "sessions", today(), `rollout-100000-${codexId}.jsonl`);
   await mkdir(join(home, ".claude", "sessions"), { recursive: true });

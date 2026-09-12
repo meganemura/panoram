@@ -1,22 +1,22 @@
 ---
-name: panoram
+name: spacequery
 license: MIT
-description: Use when an agent wants to know the state of the developer's machine before it acts. Which agents run where and what they do, which repositories are dirty or behind, which worktrees have nobody in them, which sessions are idle, which tool versions a repository activates. Also use when the user names panoram, a panoram query, or asks to add a query.
+description: Use when an agent wants to know the state of the developer's machine before it acts. Which agents run where and what they do, which repositories are dirty or behind, which worktrees have nobody in them, which sessions are idle, which tool versions a repository activates. Also use when the user names spacequery, a spacequery query, or asks to add a query.
 ---
 
-# panoram
+# spacequery
 
-panoram answers questions about one developer's machine.
+spacequery answers questions about one developer's machine.
 Each call observes the providers (herdr, git, ghq, mise, Homebrew, gh, Docker, ps, lsof, beads, headsign state files, the session records, skill and plugin files) at that moment, joins them in an in-memory database, and prints rows.
-Nothing is cached, and panoram never writes to a provider.
+Nothing is cached, and spacequery never writes to a provider.
 
 Call it from anywhere:
 
 ```sh
-panoram <query> [--root DIR] [--scope root|agents|all] [--me PANE] [--tsv]
+spacequery <query> [--root DIR] [--scope root|agents|all] [--me PANE] [--tsv]
 ```
 
-`panoram` is on PATH after `npm link` in the checkout; `node /path/to/panoram/cli.ts` is the same command without the link.
+`spacequery` is on PATH after `npm link` in the checkout; `node /path/to/spacequery/cli.ts` is the same command without the link.
 
 The query JSON envelope carries `rows` and `providers`.
 Read `providers` before you trust `rows`: a provider with `ok` 0 left its tables empty in this call.
@@ -29,7 +29,7 @@ Exact provider JSON names and their state sources: [references/providers.md](ref
 
 ## Workflow
 
-1. **Before you start work in a repository**: `here` (one call: who else is here with `in-dir`, the checkout with `git-status` and `worktrees`, its pull request with `branch-pull-requests`, ports with `ports-in-dir`, processes with `processes-in-dir`, Docker containers with `containers-in-dir` and `container-ports-in-dir`, tools with `tools-in-dir`, issues, and the workflow). The rows exclude your own pane. As a gate: `panoram here --expect-empty --strict` exits 0 only when nobody else is here and every provider answered.
+1. **Before you start work in a repository**: `here` (one call: who else is here with `in-dir`, the checkout with `git-status` and `worktrees`, its pull request with `branch-pull-requests`, ports with `ports-in-dir`, processes with `processes-in-dir`, Docker containers with `containers-in-dir` and `container-ports-in-dir`, tools with `tools-in-dir`, issues, and the workflow). The rows exclude your own pane. As a gate: `spacequery here --expect-empty --strict` exits 0 only when nobody else is here and every provider answered.
 2. **When the user asks what is going on**: `agents-with-sessions` (names, idle time), `working`, `idle-sessions`, `workspaces`.
 3. **When you look for a place to work**: `idle-worktrees` (a worktree with nobody in it), `dirty-unattended` (changes nobody is tending).
 4. **When a tool is missing or the wrong version**: `tools-in-dir`, `repository-versions`, `missing-tools-with-agents`, `tool-versions-split`.

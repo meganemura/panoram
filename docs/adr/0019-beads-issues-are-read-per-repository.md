@@ -12,7 +12,7 @@ Open issues describe present work; closed issues describe history.
 
 ## Decision
 
-For each root in scope with `.beads`, panoram runs `bd -C <root> list --json`.
+For each root in scope with `.beads`, spacequery runs `bd -C <root> list --json`.
 The loader reads open issues only and runs the calls concurrently.
 
 ## Consequences

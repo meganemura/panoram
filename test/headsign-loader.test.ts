@@ -14,7 +14,7 @@ import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
 import { repoForRoots } from "./fixture.ts";
 
-const home = mkdtempSync(join(tmpdir(), "panoram-headsign-"));
+const home = mkdtempSync(join(tmpdir(), "spacequery-headsign-"));
 const alpha = join(home, "src", "github.com", "example", "alpha");
 const beta = join(home, "src", "github.com", "example", "beta");
 const gamma = join(home, "src", "github.com", "example", "gamma");

@@ -2,16 +2,16 @@
 
 How a version is released: [releasing.md](releasing.md).
 
-This directory records architecture decisions for panoram.
+This directory records architecture decisions for spacequery.
 Each ADR describes one decision and its consequences.
 
 | ADR | Decision |
 | --- | --- |
-| [0001](adr/0001-name-panoram.md) | The tool is named panoram. |
+| [0001](adr/0001-name-panoram.md) | The tool is named panoram (superseded by 0030). |
 | [0002](adr/0002-fresh-database-per-call.md) | Each call uses a fresh in-memory database. |
 | [0003](adr/0003-repository-root-join-key.md) | The repository root joins provider data. |
 | [0004](adr/0004-one-module-per-provider.md) | Each provider uses one solarsql module. |
-| [0005](adr/0005-read-only-tool.md) | panoram reads provider state. |
+| [0005](adr/0005-read-only-tool.md) | spacequery reads provider state. |
 | [0006](adr/0006-codegraph-outside-v0.md) | CodeGraph is not a provider. |
 | [0007](adr/0007-resolve-loaders-with-authorizer.md) | The core resolves named queries from metadata and ad hoc SQL with an authorizer probe. |
 | [0008](adr/0008-loader-order.md) | Loaders run in dependency order, then configuration order. |
@@ -36,3 +36,4 @@ Each ADR describes one decision and its consequences.
 | [0027](adr/0027-homebrew-is-a-machine-inventory.md) | Homebrew is a machine inventory. |
 | [0028](adr/0028-repository-versions-are-static-file-evidence.md) | Repository versions are static file evidence. |
 | [0029](adr/0029-repository-config-files-are-a-bounded-inventory.md) | Repository configuration files are a bounded inventory. |
+| [0030](adr/0030-rename-to-spacequery.md) | The tool is renamed spacequery. |

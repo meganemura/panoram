@@ -10,7 +10,7 @@ import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import type { Exec, Loader } from "../core/loader.ts";
 import { runSql } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { herdrLoader } from "../providers/herdr/loader.ts";
 import { miseConfigFilesOf, miseLoader } from "../providers/mise/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
@@ -60,7 +60,7 @@ test("mise skips every root in a configuration group that does not answer", asyn
 });
 
 test("mise runs once for roots with the same configuration files", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "panoram-mise-"));
+  const directory = mkdtempSync(join(tmpdir(), "spacequery-mise-"));
   const sharedOne = join(directory, "repos", "one");
   const sharedTwo = join(directory, "repos", "two");
   const distinct = join(directory, "other");

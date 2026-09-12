@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { catalog } from "../catalog.ts";
 import { runQuery } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { fakeExec, fixtureRepo } from "./fixture.ts";
 
 function providerFacts(rows: { name: string; ok: number; error: string | null }[]): { name: string; ok: number; error: string | null }[] {

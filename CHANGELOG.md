@@ -2,6 +2,10 @@
 
 The format follows Keep a Changelog, and the versions follow SemVer. Before 1.0 a minor version may change the queries, the tables, or the flags; the entry says what changed.
 
+## Unreleased
+
+- Renamed from panoram to spacequery. The state directory and the user-query directory move with the name.
+
 ## 0.1.0 (2026-09-11)
 
 The first release.

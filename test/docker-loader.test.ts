@@ -1,5 +1,5 @@
 // These tests prove the Docker loader reads only Docker CLI output and stores
-// repository facts needed by panoram. They never call the real Docker daemon.
+// repository facts needed by spacequery. They never call the real Docker daemon.
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { test } from "node:test";

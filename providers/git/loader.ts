@@ -32,7 +32,7 @@ async function worktreesOf(ctx: LoadContext, root: string): Promise<Worktree[]> 
 async function statusOf(ctx: LoadContext, root: string): Promise<Status> {
   const s: Status = { root: root as GitStatusId, branch: null, upstream: null, ahead: 0, behind: 0, dirty_count: 0, untracked_count: 0, observed_at: Date.now() };
   // This flag prevents an index refresh write. The answer is unchanged, and
-  // that write belongs to Git rather than panoram (ADR 0005).
+  // that write belongs to Git rather than spacequery (ADR 0005).
   for (const line of (await ctx.exec("git", ["--no-optional-locks", "status", "--porcelain=2", "--branch"], root)).split("\n")) {
     if (line.startsWith("# branch.head ")) s.branch = line.slice(14);
     else if (line.startsWith("# branch.upstream ")) s.upstream = line.slice(18);

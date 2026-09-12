@@ -1,4 +1,4 @@
-// One call of panoram: a fresh in-memory database, the loaders the
+// One call of spacequery: a fresh in-memory database, the loaders the
 // statement needs, the statement, and the `providers` rows that say which
 // loader answered. Nothing survives the call (ADR 0002).
 // Boundary: scheduling and recording. What a loader runs stays with the

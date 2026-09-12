@@ -65,7 +65,7 @@ For `--scope agents` and `--scope all`, also read the report-level `providers`.
 A section status does not show whether providers that enumerate roots answered.
 
 `--tsv` prints a header line and the rows, tab separated, null as an empty cell.
-A failed provider goes to standard error as `panoram: provider <name> failed: <error>`.
+A failed provider goes to standard error as `spacequery: provider <name> failed: <error>`.
 For a report, TSV prints `# <section>` before each non-empty section's TSV
 table and an empty line after that table. An empty section prints only its
 `# <section>` line.
@@ -95,7 +95,7 @@ derives from `updated_at`.
 
 A query that takes `--root` runs the loaders on that root alone by default (`--scope root`); `--scope agents` widens to every repository with an agent, `--scope all` to every ghq repository.
 
-panoram records call counts in `$XDG_STATE_HOME/panoram/calls.jsonl`, or `~/.local/state/panoram/calls.jsonl` when the variable is unset.
+spacequery records call counts in `$XDG_STATE_HOME/spacequery/calls.jsonl`, or `~/.local/state/spacequery/calls.jsonl` when the variable is unset.
 
 ## Exit codes
 

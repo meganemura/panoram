@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { test } from "node:test";
 import { migrations } from "../migrations/index.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { migrate } from "solarsql/node";
 
 test("every provider table has one loader and every loader table is migrated", () => {

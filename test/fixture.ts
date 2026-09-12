@@ -1,4 +1,4 @@
-// This fixture fixes a small machine state so tests isolate panoram from external tools.
+// This fixture fixes a small machine state so tests isolate spacequery from external tools.
 // It does not try to reproduce every output form that the real tools can produce.
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";

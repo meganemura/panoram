@@ -5,7 +5,7 @@ import { test } from "node:test";
 import * as hegel from "@hegeldev/hegel";
 import * as gs from "@hegeldev/hegel/generators";
 import { runSql } from "../core/run.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { fakeExec, fixtureRepo, paths } from "./fixture.ts";
 
 function providerNames(result: { providers: { name: string }[] }): string[] {

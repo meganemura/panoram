@@ -1,6 +1,6 @@
 # Provider names
 
-panoram reports provider status with these exact JSON names.
+spacequery reports provider status with these exact JSON names.
 Use this file as a human index to what each provider observes.
 Read [output.md](output.md) for JSON envelopes, provider status, and report status.
 

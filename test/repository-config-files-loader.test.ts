@@ -6,12 +6,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { catalog } from "../catalog.ts";
-import { loaders } from "../panoram.config.ts";
+import { loaders } from "../spacequery.config.ts";
 import { scanRepositoryConfigFiles } from "../providers/repository-config-files/loader.ts";
 import { runQuery } from "../core/run.ts";
 
 async function withRoot(run: (root: string) => Promise<void>) {
-  const root = await mkdtemp(join(tmpdir(), "panoram-repository-config-files-"));
+  const root = await mkdtemp(join(tmpdir(), "spacequery-repository-config-files-"));
   try { await run(root); } finally { await rm(root, { recursive: true, force: true }); }
 }
 

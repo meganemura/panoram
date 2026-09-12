@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// The command line: panoram <query|report> [--root DIR] [--scope root|agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]
-//                   panoram --sql <text> [--root DIR] [--me PANE] [--scope root|agents|all] [--expect-empty] [--strict]
-//                   panoram --help
+// The command line: spacequery <query|report> [--root DIR] [--scope root|agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]
+//                   spacequery --sql <text> [--root DIR] [--me PANE] [--scope root|agents|all] [--expect-empty] [--strict]
+//                   spacequery --help
 // The JSON envelope carries the rows and the `providers` rows, so a caller
 // sees which provider answered and when. TSV carries the rows only, and a
 // provider that failed goes to stderr.
@@ -16,7 +16,7 @@ import type { Scope } from "./core/loader.ts";
 import { runQuery, runReport, runSql, type ProviderRow, type ReportResult, type RunResult } from "./core/run.ts";
 import { fsRepo } from "./core/repo.ts";
 import { loadUserQueries, type UserQuery } from "./core/user-queries.ts";
-import { loaders } from "./panoram.config.ts";
+import { loaders } from "./spacequery.config.ts";
 
 const commandOptions = new Set(["root", "scope", "me", "sql", "json", "tsv", "help", "expect-empty", "strict"]);
 
@@ -52,8 +52,8 @@ function usage(userQueries: readonly UserQuery[], env: Readonly<Record<string, s
   const userLines = queries.filter((query) => query.source === "user").map((query) => queryLine(query.name, query.description, query.params, width));
   const reportLines = reportEntries.map((report) => queryLine(report.name, report.description, report.params, width));
   return [
-    "usage: panoram <query|report> [--root DIR] [--scope root|agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]",
-    "       panoram --sql <text> [--root DIR] [--me PANE] [--scope root|agents|all] [--json|--tsv] [--expect-empty] [--strict]",
+    "usage: spacequery <query|report> [--root DIR] [--scope root|agents|all] [--me PANE] [--json|--tsv] [--expect-empty] [--strict]",
+    "       spacequery --sql <text> [--root DIR] [--me PANE] [--scope root|agents|all] [--json|--tsv] [--expect-empty] [--strict]",
     "",
     "queries:",
     ...lines,
@@ -146,7 +146,7 @@ function reportTsv(sections: Record<string, Record<string, unknown>[]>): string 
 }
 
 function warn(providers: ProviderRow[]): void {
-  for (const p of providers) if (!p.ok) process.stderr.write(`panoram: provider ${p.name} failed: ${p.error}\n`);
+  for (const p of providers) if (!p.ok) process.stderr.write(`spacequery: provider ${p.name} failed: ${p.error}\n`);
 }
 
 export function reportJson(name: string, result: ReportResult): Record<string, unknown> {
@@ -200,12 +200,12 @@ async function main(argv: string[]): Promise<number> {
     return help ? 0 : 2;
   }
   if (!isScope(scope)) {
-    console.error(`panoram: --scope is root, agents, or all, not ${scope}`);
+    console.error(`spacequery: --scope is root, agents, or all, not ${scope}`);
     return 2;
   }
   const rootOnlyRepositoryQueries = new Set([catalog["repository-versions"], catalog["repository-config-files"]]);
   if (named !== undefined && rootOnlyRepositoryQueries.has(named) && scope !== undefined && scope !== "root") {
-    console.error(`panoram: ${requestedName} only supports --scope root`);
+    console.error(`spacequery: ${requestedName} only supports --scope root`);
     return 2;
   }
   const wideRepositoryQueries = new Set([
@@ -214,7 +214,7 @@ async function main(argv: string[]): Promise<number> {
     catalog["repository-config-files-in-scope"],
   ]);
   if (scope === "root" && (report === reports["dependency-report"] || (named !== undefined && wideRepositoryQueries.has(named)))) {
-    console.error(`panoram: ${requestedName} supports --scope agents or all`);
+    console.error(`spacequery: ${requestedName} supports --scope agents or all`);
     return 2;
   }
   // Keep the same parameter names intact when the CLI passes them to SQLite.
@@ -233,7 +233,7 @@ async function main(argv: string[]): Promise<number> {
   } else {
     name = requestedName!;
     if (!report && !named && !userQuery) {
-      console.error(`panoram: no query named ${name}\n\n${usage(userQueries, process.env)}`);
+      console.error(`spacequery: no query named ${name}\n\n${usage(userQueries, process.env)}`);
       return 2;
     }
     if (report) {
@@ -284,8 +284,8 @@ async function main(argv: string[]): Promise<number> {
   return exitCodeFor(result, { expectEmpty: values["expect-empty"] === true, strict: values["strict"] === true });
 }
 
-// A reader that stops early (`panoram agents | head`) closes the pipe; that
-// is the reader's choice, not a failure of panoram.
+// A reader that stops early (`spacequery agents | head`) closes the pipe; that
+// is the reader's choice, not a failure of spacequery.
 process.stdout.on("error", (e: NodeJS.ErrnoException) => {
   if (e.code === "EPIPE") process.exit(0);
   throw e;
@@ -297,7 +297,7 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(
   } catch (e) {
     // A statement that does not prepare, or a parameter with no flag. The
     // message is the whole story; a stack would point into the core.
-    process.stderr.write(`panoram: ${e instanceof Error ? e.message : String(e)}\n`);
+    process.stderr.write(`spacequery: ${e instanceof Error ? e.message : String(e)}\n`);
     process.exitCode = 1;
   }
 }

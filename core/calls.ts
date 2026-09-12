@@ -8,7 +8,7 @@ const tailBytes = 1024 * 1024;
 
 export function callsPath(env: Readonly<Record<string, string | undefined>>): string {
   const stateHome = env["XDG_STATE_HOME"] || join(env["HOME"] || homedir(), ".local", "state");
-  return join(stateHome, "panoram", "calls.jsonl");
+  return join(stateHome, "spacequery", "calls.jsonl");
 }
 
 export function recordCall(env: Readonly<Record<string, string | undefined>>, name: string): void {

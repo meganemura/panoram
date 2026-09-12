@@ -1,8 +1,8 @@
 # Your own queries
 
-A question asked more than once becomes a named query without a change to panoram.
+A question asked more than once becomes a named query without a change to spacequery.
 
-Put one SQL file per query in `$XDG_CONFIG_HOME/panoram/queries/` (`~/.config/panoram/queries/` when the variable is unset):
+Put one SQL file per query in `$XDG_CONFIG_HOME/spacequery/queries/` (`~/.config/spacequery/queries/` when the variable is unset):
 
 ```sql
 -- Agents in one repository with the ruby version mise gives them.

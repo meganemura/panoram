@@ -19,7 +19,7 @@ const suffix = ".sql";
 
 export function userQueriesDirectory(env: Readonly<Record<string, string | undefined>>): string {
   const configHome = env["XDG_CONFIG_HOME"] || join(env["HOME"] || homedir(), ".config");
-  return join(configHome, "panoram", "queries");
+  return join(configHome, "spacequery", "queries");
 }
 
 export function loadUserQueries(env: Readonly<Record<string, string | undefined>>): UserQuery[] {
@@ -71,7 +71,7 @@ export function loadUserQueries(env: Readonly<Record<string, string | undefined>
 }
 
 function warn(text: string): void {
-  process.stderr.write(`panoram: ${text}\n`);
+  process.stderr.write(`spacequery: ${text}\n`);
 }
 
 function message(error: unknown): string {

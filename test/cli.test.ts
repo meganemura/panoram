@@ -100,7 +100,7 @@ test("an invalid scope exits with status 2", async () => {
 });
 
 test("root static queries discover a root without starting repository tools", async () => {
-  const root = mkdtempSync(join(tmpdir(), "panoram-cli-static-"));
+  const root = mkdtempSync(join(tmpdir(), "spacequery-cli-static-"));
   const bin = join(root, "bin");
   const nested = join(root, "packages", "app");
   const marker = join(root, "process-marker");
@@ -129,7 +129,7 @@ test("root static queries discover a root without starting repository tools", as
 });
 
 test("a linked worktree remains one selected static query root", async () => {
-  const base = mkdtempSync(join(tmpdir(), "panoram-cli-worktree-"));
+  const base = mkdtempSync(join(tmpdir(), "spacequery-cli-worktree-"));
   const main = join(base, "main");
   const linked = join(base, "linked");
   const gitdir = join(main, ".git", "worktrees", "linked");
@@ -168,7 +168,7 @@ test("wide dependency commands reject root scope before loading providers", asyn
 });
 
 test("dependency-report gates expect-empty on shared dependencies", async () => {
-  const base = mkdtempSync(join(tmpdir(), "panoram-cli-dependencies-"));
+  const base = mkdtempSync(join(tmpdir(), "spacequery-cli-dependencies-"));
   const first = join(base, "first");
   const second = join(base, "second");
   const bin = join(base, "bin");
@@ -235,7 +235,7 @@ test("an unknown query exits with status 2", async () => {
 });
 
 test("help orders queries by their call counts and does not record itself", async () => {
-  const stateHome = mkdtempSync(join(tmpdir(), "panoram-cli-calls-"));
+  const stateHome = mkdtempSync(join(tmpdir(), "spacequery-cli-calls-"));
   const env = { ...process.env, XDG_STATE_HOME: stateHome };
   try {
     for (let index = 0; index < 5; index += 1) recordCall(env, "dirty");
@@ -253,7 +253,7 @@ test("help orders queries by their call counts and does not record itself", asyn
 
 test("query documentation names every catalog query", async () => {
   const { readFile } = await import("node:fs/promises");
-  const text = await readFile("skills/panoram/references/queries.md", "utf8");
+  const text = await readFile("skills/spacequery/references/queries.md", "utf8");
   const names = new Set([...text.matchAll(/^\| `([^`]+)` \|/gm)].map((match) => match[1]!));
   assert.deepEqual(names, new Set(Object.keys(catalog)));
 });

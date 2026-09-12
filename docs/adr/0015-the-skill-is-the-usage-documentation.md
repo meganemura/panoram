@@ -6,16 +6,16 @@ Status: accepted
 
 ## Context
 
-The first reader of panoram is a coding agent, and the second is the human who works beside it.
+The first reader of spacequery is a coding agent, and the second is the human who works beside it.
 An agent reads a skill when it decides what to do; it does not read a README.
 Two documents that describe the same flags drift apart, and the one the agent reads is the one that must be right.
 solarsql made the same decision for the same readers.
 
 ## Decision
 
-`skills/panoram/SKILL.md` is the usage documentation: the workflow an agent follows and the table of queries.
+`skills/spacequery/SKILL.md` is the usage documentation: the workflow an agent follows and the table of queries.
 Its references hold the rules: every query with its columns, the envelope and the flags, the tables for a statement of your own, and user queries.
-The README says what panoram is, what it needs, how to install it, and where to read next.
+The README says what spacequery is, what it needs, how to install it, and where to read next.
 New behavior lands in the skill first.
 
 ## Consequences

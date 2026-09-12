@@ -12,8 +12,8 @@ A person needs a local name without a build.
 
 ## Decision
 
-panoram reads one SQL file for each user query from `$XDG_CONFIG_HOME/panoram/queries`.
-It uses `~/.config/panoram/queries` when `XDG_CONFIG_HOME` is unset.
+spacequery reads one SQL file for each user query from `$XDG_CONFIG_HOME/spacequery/queries`.
+It uses `~/.config/spacequery/queries` when `XDG_CONFIG_HOME` is unset.
 The file name gives the query name.
 The first line gives the description when it starts with `-- `.
 The command binds parameters from flags.

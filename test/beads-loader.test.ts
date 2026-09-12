@@ -14,7 +14,7 @@ import { herdrLoader } from "../providers/herdr/loader.ts";
 import { repoLoader } from "../providers/repos/loader.ts";
 import { repoForRoots } from "./fixture.ts";
 
-const home = mkdtempSync(join(tmpdir(), "panoram-beads-"));
+const home = mkdtempSync(join(tmpdir(), "spacequery-beads-"));
 const alpha = join(home, "src", "github.com", "example", "alpha");
 const beta = join(home, "src", "github.com", "example", "beta");
 const gamma = join(home, "src", "github.com", "example", "gamma");
