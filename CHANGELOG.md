@@ -5,6 +5,7 @@ The format follows Keep a Changelog, and the versions follow SemVer. Before 1.0 
 ## Unreleased
 
 - Renamed from panoram to spacequery. The state directory and the user-query directory move with the name.
+- Fixed: the command ran silently when started through the npm bin symlink.
 
 ## 0.1.0 (2026-09-11)
 

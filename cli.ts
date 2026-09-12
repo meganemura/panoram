@@ -7,6 +7,7 @@
 // provider that failed goes to stderr.
 // Boundary: parsing arguments and printing. core/run.ts does the work.
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
@@ -291,7 +292,19 @@ process.stdout.on("error", (e: NodeJS.ErrnoException) => {
   throw e;
 });
 
-if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// npm installs the bin as a symlink (npm link, npm install -g), so argv[1]
+// is the link path while import.meta.url is the real file. Resolve argv[1]
+// to its real path before the comparison. A missing path fails the guard.
+function isMainModule(argv1: string | undefined): boolean {
+  if (argv1 === undefined) return false;
+  try {
+    return realpathSync(resolve(argv1)) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (isMainModule(process.argv[1])) {
   try {
     process.exitCode = await main(process.argv.slice(2));
   } catch (e) {

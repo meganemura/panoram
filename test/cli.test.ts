@@ -2,7 +2,7 @@
 // They do not run a query, so they cannot start a real provider tool.
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -147,6 +147,16 @@ test("a linked worktree remains one selected static query root", async () => {
     assert.ok(result.rows.some((row: { name: string }) => row.name === "alpha"));
     assert.deepEqual(result.providers.map(({ name, ok }: { name: string; ok: number }) => [name, ok]), [["repository_versions", 1]]);
   } finally { rmSync(base, { recursive: true, force: true }); }
+});
+
+test("the command runs through a symlink to cli.ts, as the npm bin is", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "spacequery-cli-symlink-"));
+  const link = join(dir, "spacequery");
+  symlinkSync(join(process.cwd(), "cli.ts"), link);
+  try {
+    const { stdout } = await execFileAsync(process.execPath, [link, "--help"], { cwd: process.cwd(), encoding: "utf8" });
+    assert.match(stdout, /^usage: spacequery/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("root static queries reject a wider scope before loading providers", async () => {
